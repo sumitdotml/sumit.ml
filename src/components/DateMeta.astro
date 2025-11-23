@@ -5,8 +5,8 @@ interface Props {
 	as?: "p" | "span" | "div";
 }
 
-const { date, label, as = "p" } = Astro.props;
-const Tag = as as any;
+const { date, label, as = "p" } = Astro.props as Props;
+const Tag = as;
 const formatted = date.toLocaleDateString("en-US", {
 	year: "numeric",
 	month: "short",

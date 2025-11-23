@@ -7,6 +7,9 @@ import Footnotes from "../components/footnotes/Footnotes.astro";
 import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
 import HR from "../components/HR.astro";
 import Link from "../components/Link.astro";
+import { Image } from "astro:assets";
+
+import homepageHero from "../assets/homepage-hero.png";
 
 const footnotes = [
 	{
@@ -27,60 +30,65 @@ const footnotes = [
 		<main>
 			<h1 class="hero-title">Hi, I'm Sumit</h1>
 			<p>Tokyo-based SWE, aspiring ML Researcher</p>
-			<img
-				src="/homepage-hero.png"
+			<Image
+				src={homepageHero}
 				alt="Homepage Hero"
-				style="width: 22%; height: auto; border-radius: 4px; margin-bottom: 0em; object-fit: cover; object-position: center;"
+				priority
+				loading="eager"
+				width={180}
+				layout="fixed"
 			/>
+
 			<h3>Preface</h3>
 			<p>
-				I'll add more stuff here later since I'm still migrating my site, but
-				thanks for checking in! I go into some ramblings and random tangents
-				about myself on my <Link
-					href="/about"
-					style="font-weight: var(--font-weight-semibold);">about page</Link
-				>, so if you want to read a little bit about me, that's a good place.
+				Thanks for checking in! I go into some ramblings and random tangents
+				about myself <Link href="/about" fontWeight="semibold">here</Link>, so
+				if you want to read a little bit about me, that's a good place.
 			</p>
 			<p>
-				Right now, I'm particularly interested in LLMs, multilingual models, and
-				low-resource language research.<FootnoteRef id="1" />
+				Right now, I'm particularly interested in LLMs, mechinterp, and
+				low-resource language research<FootnoteRef id="1" />.
 			</p>
 			<h3>Looking for Mentorship</h3>
 			<p>
 				I'm actively looking for mentorship in ML research! I'm particularly
-				interested in LLM training, inference optimization, fine-tuning, and
-				multilingual/low-resource language research: including but not limited
-				to dataset curation, tokenization strategies, cross-lingual transfer,
-				and model adaptation for underrepresented languages. Now with that being
-				said, I'm genuinely open to exploring other areas of deep learning if
-				the problems are compelling and the learning opportunity is strong
-				(which might be pretty much every time if you're doing something
-				interesting). I'm still figuring out what I don't know right now, which
-				is exactly why I want to work alongside someone doing real research.
+				interested in LLM training, inference optimization, mechinterp,
+				fine-tuning, and multilingual/low-resource language research: including
+				but not limited to dataset curation, tokenization strategies,
+				cross-lingual transfer, and model adaptation for underrepresented
+				languages. Now with that being said, I'm genuinely open to exploring
+				other areas of deep learning if the problems are compelling and the
+				learning opportunity is strong (which might be pretty much every time if
+				you're doing something interesting). I'm still figuring out what I don't
+				know right now, which is exactly why I want to work alongside someone
+				doing real research.
 			</p>
 			<p>
 				My battle-tested method to learn has always been to put myself under
-				immense pressure from where the only option is to survive via quick
+				immense pressure from where the only option to survive is via quick
 				learning and adaptation. I love learning by doing: working on real
 				problems, asking questions, being wrong, and building up intuition
 				alongside someone who knows what they're doing. Therefore, if you're
-				working on interesting problems and think having someone curious and
-				motivated alongside you could be mutually valuable, I'd love to chat.
-				All I ask for is the right environment to learn and contribute; nothing
-				more. <Link
-					href="mailto:sumit@sumit.ml"
-					style="font-weight: var(--font-weight-semibold);">Email</Link
-				> or <Link
-					href="https://twitter.com/sumitdotml"
-					style="font-weight: var(--font-weight-semibold);">Twitter</Link
-				> work best for me; I'll get back to you as soon as I can.
+				working on interesting problems and think having someone with relentless
+				curiosity and motivation alongside you could be mutually valuable, I'd
+				love to chat. All I ask for is an environment where I can garner
+				knowledge, skills, and display my grit & toil. As long as I can go
+				all-out in my pursuit of uncompromising learning sense, I don't care
+				about any other gains or rewards.
+			</p>
+			<p>
+				<Link href="mailto:sumit@sumit.ml" fontWeight="medium"> Email </Link> or
+				<Link fontWeight="medium" href="https://twitter.com/sumitdotml">
+					Twitter
+				</Link>
+				work best for me; I'll get back to you as soon as I can.
 			</p>
 			<h3>Hmm... what else?</h3>
 			<p>
-				You can also check out my <Link
-					href="/blog"
-					style="font-weight: var(--font-weight-semibold);">blog</Link
-				> for project updates and worklogs, or just throw me a message on the aforementioned
+				You can also check out my <Link href="/blog" fontWeight="medium"
+					>blog</Link
+				>
+				for project updates and worklogs, or just throw me a message on the aforementioned
 				links if you wanna chat about stuff :)
 			</p>
 

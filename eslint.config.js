@@ -13,6 +13,7 @@ export default [
 			".astro/**",
 			"**/*.d.ts",
 			".prettierrc.cjs",
+			".venv/**",
 		],
 	},
 	{
