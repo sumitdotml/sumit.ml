@@ -1,0 +1,12 @@
+- to tie or not to tie embeddings? from [here](https://huggingface.co/spaces/HuggingFaceTB/smol-training-playbook#embedding-sharing)
+- a "downstream performance"? from [here](https://huggingface.co/spaces/HuggingFaceTB/smol-training-playbook#understanding-what-works-evaluation)
+- (get generic knowledge) multiple choice format (MCF), cloze formulation (CF) and freeform generation (FG). from [here](https://huggingface.co/spaces/HuggingFaceTB/smol-training-playbook#understanding-what-works-evaluation)
+- MoE architecture (study DeepSeek v2/v3, Kimi k2)
+- MoE + Hybrid architecture (MiniMax-01)
+- MHA, GQA, MLA
+	- [ ] write a blog differentiating between the three
+- Positional encoding with RoPE: revise
+- (get generic knowledge) learning rate schedules (cosine, multi-step, wsd)
+- intra-document masking (used in llama3), from [here](https://huggingface.co/spaces/HuggingFaceTB/smol-training-playbook#attention)
+  ![[Pasted image 20251205112929.png]]
+- 

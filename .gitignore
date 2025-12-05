@@ -32,3 +32,6 @@ worker/.dev.vars
 uv.lock
 pyproject.toml
 .python-version
+
+# obsidian
+.obsidian/
