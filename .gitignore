@@ -35,3 +35,7 @@ pyproject.toml
 
 # obsidian
 .obsidian/
+
+# playground
+__marimo__/
+__pycache__/
