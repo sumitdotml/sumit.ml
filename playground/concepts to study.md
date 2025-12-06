@@ -9,4 +9,5 @@
 - (get generic knowledge) learning rate schedules (cosine, multi-step, wsd)
 - intra-document masking (used in llama3), from [here](https://huggingface.co/spaces/HuggingFaceTB/smol-training-playbook#attention)
   ![[Pasted image 20251205112929.png]]
-- 
+- load imbalance or expert underutilization
+- auxiliary loss (MoE stuff -> during load balancing)
