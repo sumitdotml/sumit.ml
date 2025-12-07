@@ -66,7 +66,6 @@ def _(torch):
         assert type(input) is torch.Tensor, "input must be a torch.tensor"
         if input.dim() != 1:
             input.squeeze()
-        sum = torch.sum(input)
         renormalized = torch.zeros_like(input)
         total = torch.sum(input)
         for i, score in enumerate(input):
@@ -169,12 +168,128 @@ def _(ffn_expert, renormalized_topk, torch):
 
 @app.cell
 def _(weighted_combination):
+    weighted_combination.shape
+    return
+
+
+@app.cell
+def _(weighted_combination):
     weighted_combination
     return
 
 
 @app.cell
+def _(torch):
+    torch.manual_seed(40)
+    scores = torch.rand(8)
+    scores, sum(scores)
+    return (scores,)
+
+
+@app.cell
+def _(scores, torch):
+    def softmax(input: torch.Tensor) -> torch.Tensor:
+        if input.dim() != 1:
+            input.squeeze()
+        probability = torch.zeros_like(input)
+        total = sum([torch.exp(input[j]) for j in range(len(input))])
+        for i, score in enumerate(input):
+            probability[i] = torch.exp(score) / total
+        return probability
+    print(f"""My vanilla softmax:
+    {softmax(scores)}
+
+    PyTorch's softmax:
+    {torch.softmax(scores, dim=-1)}
+    """)
+    return
+
+
+@app.cell
+def _(scores, torch):
+    sum([torch.exp(scores[j]) for j in range(len(scores))])
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ## Some SwiGLU practice
+    """)
+    return
+
+
+@app.cell
+def _(router_scores):
+    router_scores
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ### GLU
+
+    ```
+    h = σ(W_gate · x) ⊙ (W_up · x)
+    output = W_down · h
+    ```
+
+    where:
+    - ⊙ = element-wise multiplication
+    - σ = sigmoid function (outputs 0 to 1, the "gate")
+    - W_gate · x = gating_pathway (just a vasiable holding the gating values, controls what gets through)
+    - W_up · x = signal_pathway (upward projection, ups the dimension of x, carries the actual information)
+    - h = hidden = sigmoud (gating_pathway) ⊙ signal_pathway
+    - output = projection back to original dimension with W_out
+    """)
+    return
+
+
+@app.cell
+def _(nn, torch):
+    class GLU(nn.Module):
+        def __init__(self, hidden_dim: int, ffn_dim: int) -> None:
+            super.__init__()
+            self.W_gate = None
+            self.W_up = None
+            self.W_down = None
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            pass
+    return
+
+
+@app.cell
 def _():
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    # Now the Router Math (Mixtral style)
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ## Assumptions
+
+    - experts = 8
+    - residual stream input `x` dimension: `[4096]`
+    - n_topk = 2
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ## 1. raw score computation for all experts
+    """)
     return
 
 
