@@ -10,7 +10,9 @@ def _():
     import torch.nn as nn
     import torch.nn.functional as F
     import marimo as mo
-    return F, mo, nn, torch
+    from typing import Optional
+    from torch import Tensor
+    return F, Optional, Tensor, mo, nn, torch
 
 
 @app.cell
@@ -61,9 +63,9 @@ def _(mo):
 
 
 @app.cell
-def _(torch):
-    def renormalization(input: torch.Tensor) -> torch.Tensor:
-        assert type(input) is torch.Tensor, "input must be a torch.tensor"
+def _(Tensor, torch):
+    def renormalization(input: Tensor) -> Tensor:
+        assert type(input) is Tensor, "input must be a torch.tensor"
         if input.dim() != 1:
             input.squeeze()
         renormalized = torch.zeros_like(input)
@@ -90,7 +92,7 @@ def _(mo):
 
 
 @app.cell
-def _(F, nn, torch):
+def _(F, Tensor, nn):
     class FFN_Expert(nn.Module):
         """
         SwiGLU feed-forward module.
@@ -115,7 +117,7 @@ def _(F, nn, torch):
             self.w_up = nn.Linear(hidden_dim, ffn_dim, bias=False)
             self.w_down = nn.Linear(ffn_dim, hidden_dim, bias=False)
 
-        def forward(self, x: torch.Tensor) -> torch.Tensor:
+        def forward(self, x: Tensor) -> Tensor:
             """
             Forward pass for the SwiGLU module.
 
@@ -161,7 +163,7 @@ def _(mo):
 @app.cell
 def _(ffn_expert, renormalized_topk, torch):
     torch.manual_seed(40)
-    residual_stream = torch.randn(4, 16)
+    residual_stream = torch.randn(2, 4, 16)
     weighted_combination = renormalized_topk[0] * ffn_expert(residual_stream) + renormalized_topk[1] * ffn_expert(residual_stream)
     return (weighted_combination,)
 
@@ -187,8 +189,8 @@ def _(torch):
 
 
 @app.cell
-def _(scores, torch):
-    def softmax(input: torch.Tensor) -> torch.Tensor:
+def _(Tensor, scores, torch):
+    def softmax(input: Tensor) -> Tensor:
         if input.dim() != 1:
             input.squeeze()
         probability = torch.zeros_like(input)
@@ -247,21 +249,157 @@ def _(mo):
 
 
 @app.cell
-def _(nn, torch):
+def _(Tensor, nn, torch):
     class GLU(nn.Module):
         def __init__(self, hidden_dim: int, ffn_dim: int) -> None:
-            super.__init__()
-            self.W_gate = None
-            self.W_up = None
-            self.W_down = None
+            super().__init__()
+            self.W_gate = nn.Linear(in_features=hidden_dim, out_features=ffn_dim, bias=False)
+            self.W_up = nn.Linear(in_features=hidden_dim, out_features=ffn_dim, bias=False)
+            self.W_down = nn.Linear(in_features=ffn_dim, out_features=hidden_dim, bias=False)
 
-        def forward(self, x: torch.Tensor) -> torch.Tensor:
-            pass
+        def forward(self, x: Tensor) -> Tensor:
+            gating_pathway = self.W_gate(x)
+            signal_pathway = self.W_up(x)
+            hidden = signal_pathway * torch.sigmoid(gating_pathway)
+            output = self.W_down(hidden)
+            return output
+    return (GLU,)
+
+
+@app.cell
+def _(GLU):
+    glu = GLU(hidden_dim=8, ffn_dim=16)
+    return (glu,)
+
+
+@app.cell
+def _(torch):
+    torch.manual_seed(41)
+    x = torch.rand(2, 3, 8)
+    x.shape
+    return (x,)
+
+
+@app.cell
+def _(glu, x):
+    print(glu(x))
     return
 
 
 @app.cell
-def _():
+def _(Optional, Tensor, nn, torch):
+    class GLU_Torch(nn.Module):
+        r"""
+        The same GLU, this time using PyTorch's own `torch.nn.functional.glu` for reference.
+        """
+
+        def __init__(
+            self,
+            hidden_dim: int,
+            ffn_dim: int,
+            device: Optional[torch.device] = None,
+            dtype: Optional[torch.dtype] = None,
+        ) -> None:
+            super().__init__()
+
+            # mimicking how the pytorch code does this
+            factory_kwargs = {"device": device, "dtype": dtype}
+
+            self.W_gate = nn.Linear(
+                in_features=hidden_dim, out_features=ffn_dim, bias=False, **factory_kwargs
+            )
+            self.W_up = nn.Linear(
+                in_features=hidden_dim, out_features=ffn_dim, bias=False, **factory_kwargs
+            )
+            self.W_down = nn.Linear(
+                in_features=ffn_dim, out_features=hidden_dim, bias=False, **factory_kwargs
+            )
+
+        def forward(self, x: Tensor) -> Tensor:
+            gating_pathway = self.W_gate(x)
+            signal_pathway = self.W_up(x)
+            hidden = GLU_Torch._concatenate_and_get_glu(gating_pathway, signal_pathway)
+            output = self.W_down(hidden)
+            return output
+
+        @staticmethod
+        def _concatenate_and_get_glu(gate: Tensor, signal: Tensor) -> Tensor:
+            return nn.functional.glu(torch.concat([signal, gate], dim=-1))
+    return (GLU_Torch,)
+
+
+@app.cell
+def _(GLU_Torch, torch):
+    torch.manual_seed(41)
+    glu_torch = GLU_Torch(hidden_dim=8, ffn_dim=16)
+    return (glu_torch,)
+
+
+@app.cell
+def _(glu_torch, x):
+    print(glu_torch(x))
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ## SwiGLU now
+    """)
+    return
+
+
+@app.cell
+def _(Optional, Tensor, nn, torch):
+    class SwiGLU(nn.Module):
+        def __init__(
+            self,
+            hidden_dim: int,
+            ffn_dim: int,
+            device: Optional[torch.device] = None,
+            dtype: Optional[torch.dtype] = None,
+        ):
+            super().__init__()
+
+            factory_kwargs = {"device": device, "dtype": dtype}
+
+            self.W_gate = nn.Linear(
+                in_features=hidden_dim, out_features=ffn_dim, **factory_kwargs
+            )
+            self.W_up = nn.Linear(
+                in_features=hidden_dim, out_features=ffn_dim, **factory_kwargs
+            )
+
+            self.W_down = nn.Linear(
+                in_features=ffn_dim, out_features=hidden_dim, **factory_kwargs
+            )
+
+        def forward(self, x: Tensor) -> Tensor:
+            gating_pathway = self.W_gate(x)
+            signal_pathway = self.W_up(x)
+            swish = gating_pathway * torch.sigmoid(gating_pathway)
+            hidden = swish * signal_pathway
+            output = self.W_down(hidden)
+            return output
+    return (SwiGLU,)
+
+
+@app.cell
+def _(SwiGLU):
+    swiglu = SwiGLU(hidden_dim=8, ffn_dim=16)
+    return (swiglu,)
+
+
+@app.cell
+def _(x):
+    x
+    return
+
+
+@app.cell
+def _(swiglu, torch, x):
+    torch.manual_seed(41)
+    print(swiglu(x))
     return
 
 
@@ -280,6 +418,7 @@ def _(mo):
 
     - experts = 8
     - residual stream input `x` dimension: `[4096]`
+    - batches = 2
     - n_topk = 2
     """)
     return
@@ -290,6 +429,59 @@ def _(mo):
     mo.md(r"""
     ## 1. raw score computation for all experts
     """)
+    return
+
+
+@app.cell
+def _(Optional, Tensor, nn, torch):
+    class MoERouter(nn.Module):
+        def __init__(self, hidden_dim: int, n_ffn_experts: int, topk: int, device: Optional[torch.device] = None, dtype: Optional[torch.dtype] = None) -> None:
+            super().__init__()
+            factory_kwargs = {"device": device, "dtype": dtype}
+            self.n_ffn_experts = n_ffn_experts
+            self.topk = topk
+            self.W_router = nn.Linear(in_features=hidden_dim, out_features=n_ffn_experts, bias=False, **factory_kwargs)
+
+        # x is [batch, seqlen, hidden_dim]
+        def forward(self, x: Tensor) -> tuple[Tensor, Tensor]:
+        
+            # Step 1: Flatten batch and sequence dimensions
+            batch, seqlen, hidden_dim = x.shape
+            x_flat = x.view(-1, hidden_dim) # [batch*seqlen, hidden_dim]
+        
+            # Step 2: Compute raw scores for all experts
+            router_matrix = self.W_router(x_flat) # [batch*seqlen, n_ffn_experts]
+        
+            # Step 3: Apply softmax
+            probabilities = torch.softmax(router_matrix, dim=1)
+        
+            # Step 4: Select top-k experts
+            # values: [batch*seqlen, topk]
+            # indices: [batch*seqlen, topk]
+            values, indices = torch.topk(probabilities, k=self.topk)
+        
+            # Step 5: Renormalize weights
+            values = MoERouter._renormalization(values)
+        
+            return values, indices
+        
+        
+        @staticmethod
+        def _renormalization(input: Tensor) -> Tensor:
+            total = input.sum(dim=-1, keepdim=True) # total sum of experts' raw scores, not token count, hence -1 dim
+            renormalized = input / total # [batch*seqlen, topk]
+            return renormalized
+
+    torch.manual_seed(40)
+    x_in = torch.rand(2, 3, 8)
+    moe = MoERouter(hidden_dim=8, n_ffn_experts=8, topk=2)
+    values, indices = moe(x_in)
+    print(f"{values.shape}\n{values}\n{indices.shape}\n{indices}")
+    return
+
+
+@app.cell
+def _():
     return
 
 
