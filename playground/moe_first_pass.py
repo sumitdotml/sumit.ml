@@ -72,7 +72,9 @@ def _(Tensor, torch):
         total = torch.sum(input)
         for i, score in enumerate(input):
             renormalized[i] = score / total
-        return renormalized    
+        return renormalized
+
+    # UPDATE: this renormalization is wrong. see the way I've done it below in MoERouter
     return (renormalization,)
 
 
@@ -425,14 +427,6 @@ def _(mo):
 
 
 @app.cell
-def _(mo):
-    mo.md(r"""
-    ## 1. raw score computation for all experts
-    """)
-    return
-
-
-@app.cell
 def _(Optional, Tensor, nn, torch):
     class MoERouter(nn.Module):
         def __init__(self, hidden_dim: int, n_ffn_experts: int, topk: int, device: Optional[torch.device] = None, dtype: Optional[torch.dtype] = None) -> None:
@@ -442,30 +436,29 @@ def _(Optional, Tensor, nn, torch):
             self.topk = topk
             self.W_router = nn.Linear(in_features=hidden_dim, out_features=n_ffn_experts, bias=False, **factory_kwargs)
 
-        # x is [batch, seqlen, hidden_dim]
-        def forward(self, x: Tensor) -> tuple[Tensor, Tensor]:
-        
-            # Step 1: Flatten batch and sequence dimensions
-            batch, seqlen, hidden_dim = x.shape
-            x_flat = x.view(-1, hidden_dim) # [batch*seqlen, hidden_dim]
-        
+        # x is [batch*seqlen, hidden_dim]
+        def forward(self, flattened_x: Tensor) -> tuple[Tensor, Tensor]:
+
+            # Step 1: sequence dimensions
+            _, hidden_dim = flattened_x.shape
+
             # Step 2: Compute raw scores for all experts
-            router_matrix = self.W_router(x_flat) # [batch*seqlen, n_ffn_experts]
-        
+            router_matrix = self.W_router(flattened_x) # [batch*seqlen, n_ffn_experts]
+
             # Step 3: Apply softmax
             probabilities = torch.softmax(router_matrix, dim=1)
-        
+
             # Step 4: Select top-k experts
             # values: [batch*seqlen, topk]
             # indices: [batch*seqlen, topk]
             values, indices = torch.topk(probabilities, k=self.topk)
-        
+
             # Step 5: Renormalize weights
             values = MoERouter._renormalization(values)
-        
+
             return values, indices
-        
-        
+
+
         @staticmethod
         def _renormalization(input: Tensor) -> Tensor:
             total = input.sum(dim=-1, keepdim=True) # total sum of experts' raw scores, not token count, hence -1 dim
@@ -475,8 +468,108 @@ def _(Optional, Tensor, nn, torch):
     torch.manual_seed(40)
     x_in = torch.rand(2, 3, 8)
     moe = MoERouter(hidden_dim=8, n_ffn_experts=8, topk=2)
-    values, indices = moe(x_in)
+    values, indices = moe(x_in.view(-1, 8))
     print(f"{values.shape}\n{values}\n{indices.shape}\n{indices}")
+    return MoERouter, indices, values, x_in
+
+
+@app.cell
+def _(SwiGLU, nn):
+    experts = nn.ModuleList([SwiGLU(hidden_dim=8, ffn_dim=16) for _ in range(8)])
+    return (experts,)
+
+
+@app.cell
+def _(experts):
+    experts
+    return
+
+
+@app.cell
+def _(MoERouter, Optional, SwiGLU, Tensor, nn, torch):
+    class MoELayer(nn.Module):
+        def __init__(
+            self,
+            hidden_dim: int,
+            ffn_dim: int,
+            n_experts: int,
+            topk: int,
+            device: Optional[torch.device] = None,
+            dtype: Optional[torch.dtype] = None,
+        ) -> None:
+            super().__init__()
+            factory_kwargs = {"device": device, "dtype": dtype}
+
+            self.hidden_dim = hidden_dim
+            self.n_experts = n_experts
+            self.topk = topk
+
+            self.router = MoERouter(
+                hidden_dim=hidden_dim, n_ffn_experts=n_experts, topk=topk, **factory_kwargs
+            )
+            self.experts = nn.ModuleList(
+                [
+                    SwiGLU(hidden_dim=hidden_dim, ffn_dim=ffn_dim, **factory_kwargs)
+                    for _ in range(n_experts)
+                ]
+            )
+
+        def forward(self, x: Tensor) -> Tensor:
+            _, _, hidden_dim = x.shape
+            x_flattened = x.view(-1, hidden_dim)
+            weights, indices = self.router(x_flattened)
+            results = torch.zeros_like(x_flattened)
+
+            # this works, but it processes tokens sequentially, so very inefficient for production
+            # but leaving it here for reference since this is the logic
+            # for i, token in enumerate(flattened_x):
+            #     for j in range(self.topk):
+            #         results[i] += (self.experts[indices[i][j]](x_flattened[i])) * weights[i][j]
+            # return results
+
+            # fast & efficient vectorized approach
+            # reference: https://github.com/mistralai/mistral-inference/blob/main/src/mistral_inference/moe.py#L16
+            for i, expert in enumerate(self.experts):
+                token_idx, topk_idx = torch.where(indices == i)
+
+                if len(token_idx) == 0:
+                    continue
+
+                # Run expert and accumulate weighted results
+                # unsqueeze is to add 1 dim at the end since weights[token_idx, topk_idx] gives us 1d-tensors
+                results[token_idx] += weights[token_idx, topk_idx].unsqueeze(-1) * expert(x_flattened[token_idx])
+            return results
+    return (MoELayer,)
+
+
+@app.cell
+def _(MoELayer, x_in):
+    moelayer = MoELayer(hidden_dim=8, ffn_dim=16, n_experts=8, topk=2)
+    out = moelayer(x_in) # x_in: [2, 3, 8]
+    print(out)
+    return
+
+
+@app.cell
+def _(torch):
+    ind = torch.tensor([[6, 5],
+            [6, 7],
+            [7, 3],
+            [3, 1],
+            [7, 6],
+            [2, 7]])
+
+    ind
+    return
+
+
+@app.cell
+def _(indices, torch, values):
+    for i in range(8):
+        a, b = torch.where(indices == i)
+        if len(a) == 0:
+            continue
+        print(values[a, b].unsqueeze(-1).dim())
     return
 
 
