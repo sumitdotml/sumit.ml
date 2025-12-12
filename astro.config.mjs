@@ -15,7 +15,9 @@ export default defineConfig({
 			remarkPlugins: [remarkMath],
 			rehypePlugins: [rehypeKatex],
 		}),
-		sitemap(),
+		sitemap({
+			filter: (page) => !page.includes("/chiya"),
+		}),
 		react(),
 	],
 	markdown: {
