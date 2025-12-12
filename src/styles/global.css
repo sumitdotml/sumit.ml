@@ -56,6 +56,11 @@ h6 {
 	font-weight: var(--font-weight-medium);
 }
 
+.hero-image {
+	width: 170px;
+	height: auto;
+}
+
 h1 {
 	font-size: 2.08em;
 	padding: 1.8em 0 0 0;
@@ -371,6 +376,9 @@ li {
 		font-size: 2.2em;
 		padding: 1.5em 0 0.5em 0;
 	}
+	.hero-image {
+		width: 140px;
+	}
 	h1,
 	h2,
 	h3,
@@ -471,6 +479,9 @@ li {
 	.hero-title {
 		font-size: 1.95em;
 		padding: 1.3em 0 0.5em 0;
+	}
+	.hero-image {
+		width: 110px;
 	}
 	h1,
 	h2,
