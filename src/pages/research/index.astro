@@ -36,18 +36,20 @@ const research = (await getCollection("research"))
 							</a>
 							<p class="report-abstract">{item.data.abstract}</p>
 							<div class="report-meta">
-								<time datetime={item.data.date.toISOString()}>
-									{item.data.date.toLocaleDateString("en-US", {
-										year: "numeric",
-										month: "long",
-										day: "numeric",
-									})}
-								</time>
-								{item.data.revisions && item.data.revisions.length > 0 && (
-									<span class="report-updated">
-										updated {item.data.revisions.sort((a, b) => b.date.valueOf() - a.date.valueOf())[0].date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-									</span>
-								)}
+								{(() => {
+									const latestDate = item.data.revisions && item.data.revisions.length > 0
+										? item.data.revisions.sort((a, b) => b.date.valueOf() - a.date.valueOf())[0].date
+										: item.data.date;
+									return (
+										<time datetime={latestDate.toISOString()}>
+											{latestDate.toLocaleDateString("en-US", {
+												year: "numeric",
+												month: "long",
+												day: "numeric",
+											})}
+										</time>
+									);
+								})()}
 								<ViewCounter slug={`research/${item.id}`} workerUrl={WORKER_URL} readOnly={true} />
 							</div>
 						</li>
