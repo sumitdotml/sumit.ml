@@ -37,4 +37,38 @@ const pages = defineCollection({
 		}),
 });
 
-export const collections = { blog, pages };
+const research = defineCollection({
+	loader: glob({ base: "./src/content/research", pattern: "**/*.{md,mdx}" }),
+	schema: ({ image }) =>
+		z.object({
+			title: z.string(),
+			abstract: z.string().optional(),
+			date: z.coerce.date(),
+			authors: z
+				.array(
+					z.object({
+						name: z.string(),
+						affiliation: z.string().optional(),
+						email: z.string().optional(),
+					}),
+				)
+				.or(z.string())
+				.optional(),
+			keywords: z.array(z.string()).optional(),
+			revisions: z
+				.array(
+					z.object({
+						date: z.coerce.date(),
+						note: z.string(),
+					}),
+				)
+				.optional(),
+			codeUrl: z.string().url().optional(),
+			pdfUrl: z.string().url().optional(),
+			description: z.string().optional(),
+			image: image().optional(),
+			draft: z.boolean().optional().default(false),
+		}),
+});
+
+export const collections = { blog, pages, research };

@@ -1,0 +1,117 @@
+---
+title: "Expert Emergence in Mixture-of-Experts Architectures"
+abstract: "This is just a dummy, real content will be added once I complete the project."
+date: 2026-01-30
+authors:
+  - name: "sumitdotml"
+    email: "sumit@sumit.ml"
+    affiliation: "Independent"
+keywords:
+  - transformers
+  - attention mechanisms
+  - mixture-of-experts
+  - expert independence
+revisions:
+  - date: 2026-01-30
+    note: "updated with some dummy updates on this that: this is how I write revisions"
+codeUrl: "https://github.com/sumitdotml/moe-emergence"
+---
+
+import Cite from '../../components/research/Cite.astro';
+import Ref from '../../components/research/Ref.astro';
+
+Everything here is dummy for now, fyi! I will be adding real content once I complete the project.
+
+## Introduction
+
+Transformer architectures have become the dominant paradigm for natural language processing tasks <Cite id="elhage2021" authors="Elhage et al." year={2021} />.
+
+Testing citation here <Cite id="vaswani2017" authors="Vaswani et al." year={2017} />.
+
+## Background
+
+### The Dummy Circuit
+
+Some LaTex dummy:
+
+$$
+W_{OV} = W_V W_O
+$$
+
+LaTex in a normal paragraph can be added like this:
+
+When $W_{OV} \approx I$ (the identity matrix), the attention head primarily copies information from attended positions without significant transformation.
+
+### Measuring Dummy Behavior
+
+We can quantify how close a dummy is to being a dummy using the dummy norm:
+
+$$
+d_D(W_{OV}, I) = \|W_{OV} - I\|_D = \left(\sum_{i,j} (w_{ij} - \delta_{ij})^2\right)^{1/2}
+$$
+
+where $\delta_{ij}$ is the dummy delta.
+
+Inline LaTex dummy:
+
+$$
+d_D(W_{OV}, I) = \|W_{OV} - I\|_D = \left(\sum_{i,j} (w_{ij} - \delta_{ij})^2\right)^{1/2}
+$$
+
+## Methodology
+
+Our analysis proceeds in three steps:
+
+1. dummy step 1
+2. dummy step 2
+3. dummy step 3
+
+### Model Selection
+
+We analyze the following architectures:
+
+| Dummy | Parameters | Layers | Heads |
+|-------|------------|--------|-------|
+| Dummy 1 | 124M | 12 | 12 |
+| Dummy 2 | 355M | 24 | 16 |
+| Dummy 3 | 774M | 36 | 20 |
+
+## Results
+
+Results to be added in future versions.
+
+
+Code sample:
+
+```python
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class MyModel(nn.Module):
+    def __init__(self):
+        super(MyModel, self).__init__()
+        self.fc1 = nn.Linear(10, 20) # sample comment to extend the line - more dummy text to see how it looks
+        self.fc2 = nn.Linear(20, 10)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.fc2(x)
+        return x
+```
+
+## Conclusion
+
+Conclusion ooga booga
+
+<section class="references">
+
+## References
+
+How to write references (cases for pub link as well as arXiv links below):
+
+<Ref id="elhage2021" authors="Elhage, N., Nanda, N., Olsson, C., Henighan, T., Joseph, N., Mann, B., Askell, A., Bai, Y., Chen, A., Conerly, T., DasSarma, N., Drain, D., Ganguli, D., Hatfield-Dodds, Z., Hernandez, D., Jones, A., Kernion, J., Lovitt, L., Ndousse, K., Amodei, D., Brown, T., Clark, J., Kaplan, J., McCandlish, S., and Olah, C." year={2021} title="A Mathematical Framework for Transformer Circuits" venue="Transformer Circuits Thread" url="https://transformer-circuits.pub/2021/framework/index.html" />
+
+<Ref id="vaswani2017" authors="Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, Ł., and Polosukhin, I." year={2017} title="Attention Is All You Need" venue="Advances in Neural Information Processing Systems" volume={30} url="https://arxiv.org/abs/1706.03762" />
+
+</section>

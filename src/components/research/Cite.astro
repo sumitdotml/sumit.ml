@@ -1,0 +1,35 @@
+---
+/**
+ * Inline citation component - renders author-style citations
+ *
+ * Usage:
+ * ```
+ * <Cite id="vaswani2017" authors="Vaswani et al." year={2017} />
+ * ```
+ * Renders as: (Vaswani et al., 2017) with link to #ref-vaswani2017
+ *
+ * For narrative style:
+ * ```
+ * <Cite id="vaswani2017" authors="Vaswani et al." year={2017} narrative />
+ * ```
+ * Renders as: Vaswani et al. (2017)
+ */
+interface Props {
+	id: string;
+	authors: string;
+	year: number | string;
+	narrative?: boolean;
+}
+
+const { id, authors, year, narrative = false } = Astro.props;
+---
+
+{narrative ? (
+	<span class="cite cite-narrative">
+		<a href={`#ref-${id}`}>{authors}</a> ({year})
+	</span>
+) : (
+	<span class="cite">
+		(<a href={`#ref-${id}`}>{authors}, {year}</a>)
+	</span>
+)}

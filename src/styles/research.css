@@ -1,0 +1,559 @@
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+:root {
+	--research-font-serif: "EB Garamond", "Georgia", "Times New Roman", serif;
+	--research-font-mono: "Fira Code", "Monaco", "Consolas", monospace;
+
+	--research-text-color: #000000;
+	--research-link-color: #0000ee;
+	--research-bg-color: #ffffff;
+
+	--research-max-width: 700px;
+	--research-font-size: 18px;
+	--research-line-height: 1.6;
+}
+
+html {
+	font-size: var(--research-font-size);
+}
+
+body {
+	font-family: var(--research-font-serif);
+	font-size: 1rem;
+	line-height: var(--research-line-height);
+	color: var(--research-text-color);
+	background: var(--research-bg-color);
+	margin: 0;
+	padding: 0;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+}
+
+.research {
+	max-width: var(--research-max-width);
+	margin: 0 auto;
+	padding: 2.5rem 1.5rem 4rem;
+}
+
+@media print {
+	.research {
+		max-width: none;
+		padding: 0;
+	}
+}
+
+/* Header - classic style */
+.research-header {
+	text-align: center;
+	margin-bottom: 2.5rem;
+}
+
+.research-header::after {
+	content: "";
+	display: block;
+	width: 100%;
+	height: 1px;
+	background: #ccc;
+	margin-top: 1.5rem;
+}
+
+.research-title {
+	font-size: 2.2rem;
+	font-weight: bold;
+	margin: 0 0 1.5rem 0;
+	line-height: 1.3;
+}
+
+/* Authors - displayed inline with spacing */
+.research-authors {
+	margin-bottom: 1rem;
+	line-height: 1.6;
+}
+
+.author {
+	display: inline-block;
+	text-align: center;
+	vertical-align: top;
+}
+
+.author-name {
+	display: block;
+	font-size: 1rem;
+	font-variant: small-caps;
+	letter-spacing: 0.02em;
+}
+
+.author-affiliation {
+	display: block;
+	font-size: 0.9rem;
+	font-style: italic;
+	color: #444;
+	margin-top: 0.1rem;
+}
+
+.author-email {
+	display: block;
+	font-size: 0.75rem;
+	color: #666;
+	font-family: var(--research-font-mono);
+	margin-top: 0.1rem;
+}
+
+.author-and {
+	display: inline;
+}
+
+.research-date-container {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	margin-top: 0.5rem;
+}
+
+.research-date {
+	font-size: 0.95rem;
+	color: #333;
+}
+
+.date-separator {
+	color: #999;
+}
+
+.revision-toggle {
+	background: none;
+	border: none;
+	padding: 0;
+	font-family: var(--research-font-serif);
+	font-size: 0.85rem;
+	color: var(--research-link-color);
+	cursor: pointer;
+	text-decoration: none;
+}
+
+.revision-toggle:hover {
+	text-decoration: underline;
+}
+
+.revision-toggle[aria-expanded="true"]::after {
+	content: " ▴";
+	font-size: 0.7em;
+}
+
+.revision-toggle[aria-expanded="false"]::after {
+	content: " ▾";
+	font-size: 0.7em;
+}
+
+.revision-history {
+	margin-top: 0.75rem;
+	font-size: 0.85rem;
+	color: #555;
+	text-align: left;
+}
+
+.revision-history[hidden] {
+	display: none;
+}
+
+.revision-history:not([hidden]) {
+	display: inline-block;
+}
+
+.revision-history ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.revision-history li {
+	display: grid;
+	grid-template-columns: 6.5em 1fr;
+	gap: 1em;
+	margin-bottom: 0.35rem;
+}
+
+.revision-history .revision-date {
+	color: #666;
+	white-space: nowrap;
+}
+
+.revision-history .revision-note {
+	color: #444;
+}
+
+.revision-history .revision-original {
+	color: #888;
+	font-style: italic;
+}
+
+.revision-history .revision-original .revision-date,
+.revision-history .revision-original .revision-note {
+	color: inherit;
+}
+
+.research-links {
+	display: flex;
+	justify-content: center;
+	gap: 1.5rem;
+	margin-top: 0.75rem;
+}
+
+.research-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	font-size: 0.9rem;
+	color: var(--research-link-color);
+	text-decoration: none;
+}
+
+.research-link:hover {
+	text-decoration: underline;
+}
+
+.research-link svg {
+	flex-shrink: 0;
+}
+
+.abstract {
+	margin: 2rem 0;
+}
+
+.abstract h2 {
+	font-size: 1.6rem;
+	font-weight: bold;
+	margin-top: 2rem;
+	margin-bottom: 0.75rem;
+}
+
+.abstract p {
+	text-align: justify;
+}
+
+.keywords {
+	font-size: 0.9rem;
+	margin-top: 1rem;
+}
+
+.research-content {
+	text-align: justify;
+	hyphens: auto;
+	-webkit-hyphens: auto;
+}
+
+.research-content h1,
+.research-content h2,
+.research-content h3,
+.research-content h4,
+.research-content h5,
+.research-content h6 {
+	font-family: var(--research-font-serif);
+	font-weight: bold;
+	margin-top: 2rem;
+	margin-bottom: 0.75rem;
+}
+
+.research-content h2 {
+	font-size: 1.6rem;
+	border-bottom: none;
+}
+
+.research-content h3 {
+	font-size: 1.15rem;
+	margin-top: 1.25rem;
+}
+
+.research-content h4 {
+	font-size: 1.15rem;
+}
+
+.research-content p {
+	margin: 0 0 0.75rem 0;
+}
+
+a {
+	color: var(--research-link-color);
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+.research-content ul,
+.research-content ol {
+	margin: 1rem 0;
+	padding-left: 2rem;
+}
+
+.research-content li {
+	margin-bottom: 0.4rem;
+}
+
+.research-content code {
+	font-family: var(--research-font-mono);
+	font-size: 0.9em;
+	background: #f5f5f5;
+	padding: 0.1em 0.3em;
+	border-radius: 2px;
+}
+
+/* Code blocks - LaTeX style with syntax highlighting */
+.research-content pre {
+	font-family: var(--research-font-mono);
+	font-size: 0.85rem;
+	background-color: #fafafa;
+	border: 1px solid #333;
+	border-radius: 0;
+	padding: 0.75rem 1rem;
+	overflow-x: auto;
+	margin: 1.5rem 0;
+}
+
+.research-content pre.astro-code,
+.research-content pre.astro-code code,
+.research-content pre.astro-code code span {
+	color: var(--shiki-light);
+	background: transparent;
+}
+
+.research-content pre code {
+	background: none;
+	padding: 0;
+}
+
+.research-content blockquote {
+	margin: 1.5rem 2rem;
+	padding-left: 1rem;
+	border-left: 2px solid #ccc;
+	font-style: italic;
+}
+
+.research-content table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 1.5rem 0;
+	font-size: 0.9rem;
+}
+
+.research-content table caption {
+	caption-side: bottom;
+	text-align: left;
+	font-size: 0.85rem;
+	padding-top: 0.5rem;
+}
+
+.research-content th,
+.research-content td {
+	padding: 0.5rem;
+	text-align: left;
+	border-top: 1px solid #000;
+	border-bottom: 1px solid #000;
+}
+
+.research-content th {
+	font-weight: bold;
+}
+
+.research-content thead th {
+	border-bottom: 2px solid #000;
+}
+
+.research-content tbody tr:last-child td {
+	border-bottom: 2px solid #000;
+}
+
+.research-content img {
+	max-width: 100%;
+	height: auto;
+	display: block;
+	margin: 1.5rem auto;
+}
+
+.research-content figure {
+	margin: 2rem 0;
+	text-align: center;
+}
+
+.research-content figcaption {
+	font-size: 0.9rem;
+	margin-top: 0.5rem;
+	font-style: italic;
+}
+
+.katex {
+	font-size: 1em !important;
+}
+
+.katex-display {
+	margin: 1.5rem 0 !important;
+	overflow-x: auto;
+	overflow-y: hidden;
+}
+
+.footnote-ref {
+	font-size: 0.75em;
+	vertical-align: super;
+	line-height: 0;
+}
+
+/* for the sake of inline citations*/
+.cite {
+	/* Inline with text */
+}
+
+.cite a {
+	color: var(--research-link-color);
+	text-decoration: none;
+}
+
+.cite a:hover {
+	text-decoration: underline;
+}
+
+.references {
+	margin-top: 3rem;
+}
+
+.references h2 {
+	font-size: 1.6rem;
+	font-weight: bold;
+	margin-bottom: 1.5rem;
+}
+
+.reference {
+	margin-bottom: 1rem;
+	font-size: 0.95rem;
+	line-height: 1.6;
+	padding-left: 2rem;
+	text-indent: -2rem;
+}
+
+.ref-authors::after {
+	content: " ";
+}
+
+.ref-year::after {
+	content: " ";
+}
+
+.ref-title {
+	/* Title not italic, but da venue is italic */
+}
+
+.ref-venue {
+	/* Venue in italic via <em> in component */
+}
+
+.acknowledgments {
+	margin-top: 3rem;
+	padding-top: 1rem;
+	border-top: 1px solid #ccc;
+}
+
+.acknowledgments h2 {
+	font-size: 1rem;
+	font-weight: bold;
+}
+
+.acknowledgments p {
+	font-size: 0.9rem;
+}
+
+.research-footer {
+	margin-top: 4rem;
+	padding-top: 1rem;
+	border-top: 1px solid #ccc;
+	text-align: center;
+	font-size: 0.85rem;
+}
+
+.research-footer .separator {
+	margin: 0 0.5rem;
+	color: #ccc;
+}
+
+@media (max-width: 768px) {
+	:root {
+		--research-font-size: 17px;
+	}
+
+	.research-title {
+		font-size: 2rem;
+	}
+
+	.abstract h2 {
+		font-size: 1.5rem;
+	}
+
+	.research-content h2 {
+		font-size: 1.5rem;
+	}
+
+	.research-content h3 {
+		font-size: 1.1rem;
+	}
+
+	.research-content h4 {
+		font-size: 1rem;
+	}
+}
+
+@media (max-width: 600px) {
+	:root {
+		--research-font-size: 16px;
+	}
+
+	.research {
+		padding: 1.5rem 1rem 3rem;
+	}
+
+	.research-title {
+		font-size: 1.75rem;
+	}
+
+	.abstract h2 {
+		font-size: 1.4rem;
+	}
+
+	.research-content h2 {
+		font-size: 1.4rem;
+	}
+
+	.research-content h3 {
+		font-size: 1.05rem;
+	}
+
+	.research-content h4 {
+		font-size: 0.95rem;
+	}
+
+	.research-content blockquote {
+		margin: 1rem 0.5rem;
+	}
+}
+
+@media print {
+	body {
+		font-size: 10pt;
+	}
+
+	.research-footer {
+		display: none;
+	}
+
+	a {
+		color: inherit;
+		text-decoration: none;
+	}
+
+	.research-content a::after {
+		content: " (" attr(href) ")";
+		font-size: 0.8em;
+	}
+}

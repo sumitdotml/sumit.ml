@@ -1,0 +1,55 @@
+---
+/**
+ * Reference entry component
+ *
+ * Usage:
+ * ```
+ * <Ref id="vaswani2017"
+ *      authors="Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, Ł., and Polosukhin, I."
+ *      year={2017}
+ *      title="Attention is all you need"
+ *      url="https://arxiv.org/abs/1706.03762" />
+ * ```
+ * 
+ * For arXiv preprints:
+ * ```
+ * <Ref id="ba2016"
+ *      authors="Ba, J. L., Kiros, J. R., and Hinton, G. E."
+ *      year={2016}
+ *      title="Layer normalization"
+ *      arxiv="1607.06450" />
+ * ```
+ */
+interface Props {
+	id: string;
+	authors: string;
+	year: number | string;
+	title: string;
+	venue?: string;
+	volume?: number | string;
+	pages?: string;
+	url?: string;
+	arxiv?: string;
+}
+
+const { id, authors, year, title, venue, volume, pages, url, arxiv } = Astro.props;
+---
+
+<div class="reference" id={`ref-${id}`}>
+	<span class="ref-authors">{authors}</span>
+	<span class="ref-year">({year}).</span>
+	{url ? (
+		<a href={url} class="ref-title" target="_blank" rel="noopener">{title}</a>
+	) : (
+		<span class="ref-title">{title}</span>
+	)}.
+	{arxiv ? (
+		<span class="ref-venue">
+			<em>arXiv preprint arXiv:{arxiv}</em>
+		</span>
+	) : venue ? (
+		<span class="ref-venue">
+			<em>{venue}</em>{volume && `, ${volume}`}{pages && `, ${pages}`}.
+		</span>
+	) : null}
+</div>
