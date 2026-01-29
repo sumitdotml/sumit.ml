@@ -1,6 +1,7 @@
 ---
 import { type CollectionEntry, getCollection, render } from "astro:content";
 import Layout from "../layouts/Layout.astro";
+import { WORKER_URL } from "../consts";
 
 export async function getStaticPaths() {
 	const pages = await getCollection("pages");
@@ -14,7 +15,6 @@ type Props = CollectionEntry<"pages">;
 
 const page = Astro.props;
 const { Content } = await render(page);
-const WORKER_URL = import.meta.env.PUBLIC_WORKER_URL;
 ---
 
 <Layout {...page.data} slug={page.id} workerUrl={WORKER_URL}>

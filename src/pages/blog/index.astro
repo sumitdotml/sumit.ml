@@ -5,14 +5,12 @@ import DateMeta from "../../components/DateMeta.astro";
 import ViewCounter from "../../components/ViewCounter.astro";
 import Header from "../../components/Header.astro";
 import Footer from "../../components/Footer.astro";
-import { BLOG_BASE_PAGE_DESCRIPTION, SITE_TITLE } from "../../consts";
+import { BLOG_BASE_PAGE_DESCRIPTION, SITE_TITLE, WORKER_URL } from "../../consts";
 import "../../styles/pages/blog.css";
 
 const posts = (await getCollection("blog")).sort(
 	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
-
-const WORKER_URL = import.meta.env.PUBLIC_WORKER_URL ?? "";
 ---
 
 <!doctype html>
