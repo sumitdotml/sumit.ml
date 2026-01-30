@@ -9,29 +9,41 @@
 interface Props {
 	slug: string;
 	workerUrl?: string;
-	readOnly?: boolean; // if true, only fetches count without incrementing
+	readOnly?: boolean; // to only fetch count without incrementing
+	trackOnly?: boolean; // to track view but not render
 }
 
 const {
 	slug,
 	workerUrl = import.meta.env.PUBLIC_WORKER_URL,
 	readOnly = false,
+	trackOnly = false,
 } = Astro.props;
 const workerApiKey = import.meta.env.PUBLIC_VIEW_COUNTER_API_KEY ?? "";
 ---
 
-<div
-	class="view-counter"
-	data-slug={slug}
-	data-worker-url={workerUrl}
-	data-read-only={readOnly.toString()}
-	data-worker-api-key={workerApiKey}
->
-	<span class="view-separator" aria-hidden="true">•</span>
-	<span class="view-count" aria-label="View count">
-		<span class="view-count-number">--</span>
-	</span>
-</div>
+{trackOnly ? (
+	<span
+		class="view-tracker"
+		data-slug={slug}
+		data-worker-url={workerUrl}
+		data-worker-api-key={workerApiKey}
+		style="display:none"
+	/>
+) : (
+	<div
+		class="view-counter"
+		data-slug={slug}
+		data-worker-url={workerUrl}
+		data-read-only={readOnly.toString()}
+		data-worker-api-key={workerApiKey}
+	>
+		<span class="view-separator" aria-hidden="true">•</span>
+		<span class="view-count" aria-label="View count">
+			<span class="view-count-number">--</span>
+		</span>
+	</div>
+)}
 
 <script>
 	const isLocalEnvironment = () => {
@@ -85,9 +97,12 @@ const workerApiKey = import.meta.env.PUBLIC_VIEW_COUNTER_API_KEY ?? "";
 
 			// checks if user has already viewed this post recently (24 hours)
 			const viewKey = `viewed_${prefixedSlug}`;
+			const failureKey = `view_display_failed_${prefixedSlug}`;
 			const lastViewed = localStorage.getItem(viewKey);
+			const lastFailed = Number(localStorage.getItem(failureKey));
 			const now = Date.now();
 			const twentyFourHours = 24 * 60 * 60 * 1000;
+			const failureCooldown = 5 * 60 * 1000;
 
 			// if read-only mode (e.g., on listing page), never increments
 			// otherwise, checks if viewed within last 24 hours
@@ -107,7 +122,15 @@ const workerApiKey = import.meta.env.PUBLIC_VIEW_COUNTER_API_KEY ?? "";
 				});
 
 				if (!response.ok) {
-					throw new Error("Failed to fetch view count");
+					const shouldWarn =
+						!Number.isFinite(lastFailed) || now - lastFailed > failureCooldown;
+					if (shouldWarn) {
+						console.warn(
+							`View count fetch failed for ${prefixedSlug}: ${response.status}`,
+						);
+						localStorage.setItem(failureKey, now.toString());
+					}
+					return;
 				}
 
 				const data = await response.json();
@@ -116,6 +139,8 @@ const workerApiKey = import.meta.env.PUBLIC_VIEW_COUNTER_API_KEY ?? "";
 				if (shouldIncrement) {
 					localStorage.setItem(viewKey, now.toString());
 				}
+
+				localStorage.removeItem(failureKey);
 
 				// hides the counter if 0 views
 				if (data.views === 0) {
@@ -135,14 +160,76 @@ const workerApiKey = import.meta.env.PUBLIC_VIEW_COUNTER_API_KEY ?? "";
 				// shows the counter once data is ready
 				container.classList.add("loaded");
 			} catch (error) {
-				console.error("Error tracking views:", error);
+				const shouldWarn =
+					!Number.isFinite(lastFailed) || now - lastFailed > failureCooldown;
+				if (shouldWarn) {
+					console.error("Error tracking views:", error);
+					localStorage.setItem(failureKey, now.toString());
+				}
+			}
+		});
+	}
+
+	async function trackViewsOnly() {
+		const trackers = document.querySelectorAll(".view-tracker");
+
+		trackers.forEach(async (tracker) => {
+			const slug = tracker.getAttribute("data-slug");
+			const workerUrl = tracker.getAttribute("data-worker-url");
+			const workerApiKey = tracker.getAttribute("data-worker-api-key") || "";
+
+			if (!slug || !workerUrl) return;
+			if (isLocalEnvironment()) return;
+
+			const hasTrackingCounter = Array.from(
+				document.querySelectorAll(".view-counter"),
+			).some((container) => {
+				const counterSlug = container.getAttribute("data-slug");
+				const isReadOnly = container.getAttribute("data-read-only") === "true";
+				return counterSlug === slug && !isReadOnly;
+			});
+
+			if (hasTrackingCounter) return;
+
+			const viewKey = `viewed_${slug}`;
+			const failureKey = `view_failed_${slug}`;
+			const lastViewed = localStorage.getItem(viewKey);
+			const lastFailed = Number(localStorage.getItem(failureKey));
+			const now = Date.now();
+			const twentyFourHours = 24 * 60 * 60 * 1000;
+			const failureCooldown = 5 * 60 * 1000;
+
+			if (!lastViewed || now - parseInt(lastViewed) > twentyFourHours) {
+				try {
+					const response = await fetch(`${workerUrl}/views/${slug}`, {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							...(workerApiKey ? { "X-Worker-Api-Key": workerApiKey } : {}),
+						},
+					});
+					if (response.ok) {
+						localStorage.setItem(viewKey, now.toString());
+						localStorage.removeItem(failureKey);
+					} else {
+						const shouldWarn = !Number.isFinite(lastFailed) || now - lastFailed > failureCooldown;
+						if (shouldWarn) {
+							console.warn(`View tracking failed for ${slug}: ${response.status}`);
+							localStorage.setItem(failureKey, now.toString());
+						}
+					}
+				} catch (error) {
+					console.error("Error tracking view:", error);
+				}
 			}
 		});
 	}
 
 	trackAndDisplayViews();
+	trackViewsOnly();
 
 	document.addEventListener("astro:page-load", trackAndDisplayViews);
+	document.addEventListener("astro:page-load", trackViewsOnly);
 </script>
 
 <style>
