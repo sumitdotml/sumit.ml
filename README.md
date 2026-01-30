@@ -79,7 +79,7 @@ The view counter setup is intentionally complex with multiple security layers to
 
 1. Deploy the Cloudflare Worker (instructions in [worker/README.md](worker/README.md))
 2. Configure required secrets and environment variables
-3. Set `PUBLIC_WORKER_URL` in your `.env` file
+3. Copy `.env.example` to `.env` and fill in your values
 
 For detailed setup instructions, security considerations, and implementation details, see:
 - [worker/README.md](worker/README.md) - Complete setup guide
