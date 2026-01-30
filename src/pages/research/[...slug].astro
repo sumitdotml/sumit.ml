@@ -1,6 +1,7 @@
 ---
 import { type CollectionEntry, getCollection, render } from "astro:content";
 import ResearchLayout from "../../layouts/ResearchLayout.astro";
+import { WORKER_URL } from "../../consts";
 
 export async function getStaticPaths() {
 	const research = await getCollection("research");
@@ -16,6 +17,6 @@ const item = Astro.props;
 const { Content } = await render(item);
 ---
 
-<ResearchLayout {...item.data}>
+<ResearchLayout {...item.data} slug={`research/${item.id}`} workerUrl={WORKER_URL}>
 	<Content />
 </ResearchLayout>
