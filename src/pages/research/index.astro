@@ -32,7 +32,9 @@ const research = (await getCollection("research"))
 							<a href={`/research/${item.id}/`}>
 								<h2 class="report-title">{item.data.title}</h2>
 							</a>
-							<p class="report-abstract">{item.data.abstract}</p>
+							{item.data.subtitle && (
+									<p class="report-abstract">{item.data.subtitle}</p>
+								)}
 							<div class="report-meta">
 								{(() => {
 									const latestDate = item.data.revisions && item.data.revisions.length > 0
