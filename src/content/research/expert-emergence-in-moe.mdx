@@ -62,13 +62,13 @@ The efficiency promise: an 8-expert MoE with top-1 routing has 8x the FFN parame
 
 Several papers shaped my implementation:
 
-- Noisy Top-k Gating (Shazeer et al., 2017) <Cite id="shazeer2017" authors="Shazeer et al." year={2017} /> introduced the sparsely-gated mixture-of-experts layer. The key innovation was noisy gating: adding noise to router logits during training encourages exploration and prevents collapse to a single expert.
+- Noisy Top-k Gating <Cite id="shazeer2017" authors="Shazeer et al." year={2017} /> introduced the sparsely-gated mixture-of-experts layer. The key innovation was noisy gating: adding noise to router logits during training encourages exploration and prevents collapse to a single expert.
 
-- Switch Transformer (Fedus et al., 2021) <Cite id="fedus2021" authors="Fedus et al." year={2021} /> simplified MoE routing to top-1, where each token goes to exactly one expert. Earlier MoE work used top-2 or soft routing, but Switch showed that top-1 works fine at scale and is simpler to implement. Their key contribution was demonstrating that sparse routing doesn't hurt quality if load balancing is handled properly.
+- Switch Transformer <Cite id="fedus2021" authors="Fedus et al." year={2021} /> simplified MoE routing to top-1, where each token goes to exactly one expert. Earlier MoE work used top-2 or soft routing, but Switch showed that top-1 works fine at scale and is simpler to implement. Their key contribution was demonstrating that sparse routing doesn't hurt quality if load balancing is handled properly.
 
-- ST-MoE (Zoph et al., 2022) <Cite id="zoph2022" authors="Zoph et al." year={2022} /> introduced z-loss for router stability. They found that router logits can drift to extreme values during training, causing numerical instability. Their fix (penalizing large logits via z-loss) became standard practice.
+- ST-MoE <Cite id="zoph2022" authors="Zoph et al." year={2022} /> introduced z-loss for router stability. They found that router logits can drift to extreme values during training, causing numerical instability. Their fix (penalizing large logits via z-loss) became standard practice.
 
-- Mixtral of Experts (Jiang et al., 2024) <Cite id="jiang2024" authors="Jiang et al." year={2024} /> provided architecture reference and the expert dispatch pattern I adapted for my implementation.
+- Mixtral of Experts <Cite id="jiang2024" authors="Jiang et al." year={2024} /> provided architecture reference and the expert dispatch pattern I adapted for my implementation.
 
 ### 2.3 The Three Losses
 
