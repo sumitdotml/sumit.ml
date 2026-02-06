@@ -74,11 +74,11 @@ Several papers shaped my implementation:
 
 MoE training uses three loss terms:
 
-1. Language Modeling Loss (Cross-Entropy): This is the standard next-token prediction loss. Given tokens, predict the next one. This is the main training signal.
+**Language Modeling Loss (Cross-Entropy)**: This is the standard next-token prediction loss. Given tokens, predict the next one. This is the main training signal.
 
-2. Load Balancing Loss: Without intervention, routers tend toward collapse: one expert handles everything, others go unused. Load balancing loss penalizes this imbalance.
+**Load Balancing Loss**: Without intervention, routers tend toward collapse: one expert handles everything, others go unused. Load balancing loss penalizes this imbalance.
 
-The formula: `n_experts × Σ(f_i × P_i)`
+The formula: `n_experts × Σ(f_i × P_i)`.
 
 Where:
 
@@ -89,7 +89,7 @@ This works because if expert 1 is overloaded (high `f_1`), the loss penalizes hi
 
 Theoretical minimum: 1.0 at perfect balance. When all experts are equally used, `f_i = P_i = 1/n_experts`, and the loss equals `n_experts × n_experts × (1/n_experts)² = 1.0`.
 
-3. Z-Loss (Router Stability): Router logits can drift to extreme values during training:
+**Z-Loss (Router Stability):** Router logits can drift to extreme values during training:
 
 - Very large positive logits → softmax becomes peaked → one expert dominates
 - Very large negative logits → expert becomes "dead"
@@ -106,11 +106,19 @@ Example:
 
 The unhealthy case gets heavily penalized.
 
-**Combined Training Loss:**
+**Combined Training Loss**:
+
+$$
+\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{LM}} + \alpha \cdot \mathcal{L}_{\text{balance}} + \beta \cdot \mathcal{L}_{\text{z}}
+$$
+
+where typical values are $\alpha = 0.01$ and $\beta = 0.001$.
+
+In code:
 
 ```python
-total_loss = lm_loss + α × balance_loss + β × z_loss
-# Typical: α ~ 0.01, β ~ 0.001
+total_loss = lm_loss + balance_loss_coef * balance_loss + z_loss_coef * z_loss
+# typical values: balance_loss_coef = 0.01, z_loss_coef = 0.001
 ```
 
 ## 3. Architectural Decisions
