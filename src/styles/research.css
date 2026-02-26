@@ -208,7 +208,7 @@ body {
 	align-items: center;
 	gap: 0.35rem;
 	font-size: 0.9rem;
-	color: var(--research-link-color);
+	color: var(--research-text-color);
 	text-decoration: none;
 }
 
@@ -216,7 +216,8 @@ body {
 	text-decoration: underline;
 }
 
-.research-link svg {
+.research-link svg,
+.research-link img {
 	flex-shrink: 0;
 }
 

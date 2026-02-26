@@ -65,6 +65,9 @@ const research = defineCollection({
 				)
 				.optional(),
 			codeUrl: z.string().url().optional(),
+			modelUrl: z.string().url().optional(),
+			websiteUrl: z.string().url().optional(),
+			logsUrl: z.string().url().optional(),
 			pdfUrl: z.string().url().optional(),
 			description: z.string().optional(),
 			image: image().optional(),
