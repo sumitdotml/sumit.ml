@@ -1,12 +1,20 @@
 ---
-title: "Expert Specialization in MoE: A Worklog"
-subtitle: "Documenting the journey of training a mixture-of-experts model to study expert specialization emergence."
-date: 2026-02-01
+title: "Expert Emergence in a Small Sparse MoE Transformer Trained on Code, Math, and Prose"
+subtitle: "Training a small MoE model on code, math, and prose to observe whether expert routing patterns emerge from domain structure."
+date: 2026-02-27
 authors:
   - name: "sumitdotml"
     email: "sumit@sumit.ml"
     affiliation: "Independent"
 codeUrl: "https://github.com/sumitdotml/moe-emergence"
+modelUrl: "https://huggingface.co/sumitdotml/moe-emergence"
+logsUrl: "https://wandb.ai/sumit-ml/moe-emergence"
+keywords:
+  - "mixture of experts"
+  - "expert specialization"
+  - "sparse transformers"
+  - "routing"
+  - "load balancing"
 draft: false
 ---
 
@@ -15,981 +23,267 @@ import Ref from "../../components/research/Ref.astro";
 
 ## TL;DR
 
-Training a small MoE on code/math/prose to watch expert specialization emerge. GPT-2 base, 8 experts with top-1 routing in last 4 layers, warm-started from pretrained MLPs. Key findings so far: token imbalance across domains (code yields 1.9x more tokens than prose), dual entropy metrics matter for analysis, and verification tests caught several bugs before training. Currently in the training infrastructure phase.
+I trained a GPT-2-based MoE model on three domains (code, math, prose) to see whether experts develop routing preferences. They do. The MoE model beats a dense baseline by 3.6% on aggregate eval loss, with math seeing the largest gain (14%) and prose the only regression (1.6%). Removing the load balancing loss causes full expert collapse within 500 training steps. Top-2 routing provides a negligible 0.14% improvement over top-1, confirming that a single active expert per token captures most of the benefit.
 
-## 1. The Goal
+## 1. Motivation
 
-I want to train a small Mixture-of-Experts model on three domains (code, math, and prose) and watch whether experts specialize. The question: will expert 3 end up handling code while expert 7 handles math? Or will specialization not emerge at all?
+Mixture-of-Experts (MoE) models route each token to a subset of "expert" feed-forward networks instead of passing everything through one shared FFN. Different experts learn different things, and the router learns which expert to call for which input. This goes back to <Cite id="jacobs1991" authors="Jacobs et al." year={1991} /> and has been scaled up in modern Transformers by <Cite id="shazeer2017" authors="Shazeer et al." year={2017} /> and <Cite id="fedus2022" authors="Fedus et al." year={2022} />.
 
-This isn't a research on SOTA performance; I simply want an end-to-end MoE project ending in a trained sparse Transformer model with visualizations showing routing patterns over training, entropy curves, and per-domain expert affinity heatmaps. So, the output is a technical report documenting what happens; i.e., what emerges, what fails, what surprises.
+I wanted to see this happen from scratch, at small scale, with interpretable domains. If I train a GPT-2-sized MoE on code, math, and prose, will the experts specialize by domain? Will expert 3 end up handling math while expert 7 handles code? Or will the routing stay diffuse?
 
-The project exists because I wanted to understand MoE routing at a visceral level. Reading papers about expert specialization is different from watching it happen in my own training run, watching entropy curves drop as the router learns preferences, watching load balancing loss spike when one expert starts dominating.
+This project is pedagogical, not competitive. The goal is a trained sparse Transformer with visualizations showing routing patterns, entropy curves, and expert affinity heatmaps. Not SOTA perplexity.
 
-**Budget constraint: $80 in GPU credits.** This forces careful experiment design. No throwing compute at problems. Every training run needs to count.
+## 2. Architecture
 
-**Expected outputs:**
+### Base Model
 
-- Expert-domain affinity heatmaps (which experts route which domains)
-- Per-token routing entropy curves over training
-- Load balancing loss trajectories
-- A technical report documenting findings
+I started from GPT-2 small <Cite id="radford2019" authors="Radford et al." year={2019} /> (124M parameters, 12 Transformer layers). The last 4 layers (8 through 11) have their feed-forward networks replaced with MoE layers, each containing 8 experts with top-1 routing. The earlier layers (0 through 7) stay dense because they handle general linguistic features that don't need domain-specific routing.
 
-## 2. MoE Background
+### MoE Layer Design
 
-Before diving into implementation, some context on what Mixture of Experts actually is and why it matters.
-
-### 2.1 Mixture of Experts (MoE)
-
-In a standard transformer, every token passes through the same feed-forward network (FFN) (used interchangeably with MLP) in each layer. The FFN applies the same weights to every token, whether that token is Python syntax or a word in an essay.
-
-MoE is where things change a little. Instead of one FFN, there are multiple FFNs called "experts," and a router network decides which expert(s) handle each token. The key insight is _sparse activation_: only a subset of experts process each token, so the model gets more total capacity without proportionally more compute.
-
-```
-Standard Transformer:     MoE Transformer:
-
-   Token                     Token
-     ↓                         ↓
-  [FFN] ← all params      [Router] → picks expert(s)
-     ↓                         ↓
-  Output                   [Expert 3] ← only selected expert runs
-                               ↓
-                            Output
-```
-
-The efficiency promise: an 8-expert MoE with top-1 routing has 8x the FFN parameters but uses only 1/8 of them per token. Capacity increases without proportional compute cost.
-
-### 2.2 Key Papers
-
-Several papers shaped my implementation:
-
-- Noisy Top-k Gating <Cite id="shazeer2017" authors="Shazeer et al." year={2017} /> introduced the sparsely-gated mixture-of-experts layer. The key innovation was noisy gating: adding noise to router logits during training encourages exploration and prevents collapse to a single expert.
-
-- Switch Transformer <Cite id="fedus2021" authors="Fedus et al." year={2021} /> simplified MoE routing to top-1, where each token goes to exactly one expert. Earlier MoE work used top-2 or soft routing, but Switch showed that top-1 works fine at scale and is simpler to implement. Their key contribution was demonstrating that sparse routing doesn't hurt quality if load balancing is handled properly.
-
-- ST-MoE <Cite id="zoph2022" authors="Zoph et al." year={2022} /> introduced z-loss for router stability. They found that router logits can drift to extreme values during training, causing numerical instability. Their fix (penalizing large logits via z-loss) became standard practice.
-
-- Mixtral of Experts <Cite id="jiang2024" authors="Jiang et al." year={2024} /> provided architecture reference and the expert dispatch pattern I adapted for my implementation.
-
-### 2.3 The Three Losses
-
-MoE training uses three loss terms:
-
-**Language Modeling Loss (Cross-Entropy)**: This is the standard next-token prediction loss. Given tokens, predict the next one. This is the main training signal.
-
-**Load Balancing Loss**: Without intervention, routers tend toward collapse: one expert handles everything, others go unused. Load balancing loss penalizes this imbalance.
-
-The formula: `n_experts × Σ(f_i × P_i)`.
-
-Where:
-
-- `f_i` = fraction of tokens routed to expert i
-- `P_i` = mean probability assigned to expert i
-
-This works because if expert 1 is overloaded (high `f_1`), the loss penalizes high `P_1`. The gradient flows through `P_i` (which is differentiable) and pushes the router to reduce expert 1's probability. Eventually fewer tokens get routed there.
-
-Theoretical minimum: 1.0 at perfect balance. When all experts are equally used, `f_i = P_i = 1/n_experts`, and the loss equals `n_experts × n_experts × (1/n_experts)² = 1.0`.
-
-**Z-Loss (Router Stability):** Router logits can drift to extreme values during training:
-
-- Very large positive logits → softmax becomes peaked → one expert dominates
-- Very large negative logits → expert becomes "dead"
-- Either way → numerical instability
-
-Z-loss penalizes this: `mean(logsumexp(logits)²)`
-
-The intuition: `logsumexp(x) ≈ max(x)` when one logit dominates. Penalizing its square keeps all logits in a reasonable range.
-
-Example:
-
-- Healthy logits: `[2.0, 1.5, 1.0, 0.5]` → z-loss ≈ 7.8
-- Unhealthy logits: `[50.0, -30, -25, -40]` → z-loss ≈ 2500
-
-The unhealthy case gets heavily penalized.
-
-**Combined Training Loss**:
-
-$$
-\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{LM}} + \alpha \cdot \mathcal{L}_{\text{balance}} + \beta \cdot \mathcal{L}_{\text{z}}
-$$
-
-where typical values are $\alpha = 0.01$ and $\beta = 0.001$.
-
-In code:
+Each MoE layer replaces the original `MLP` block. I used a learned linear projection from the hidden dimension to the number of experts as the router:
 
 ```python
-total_loss = lm_loss + balance_loss_coef * balance_loss + z_loss_coef * z_loss
-# typical values: balance_loss_coef = 0.01, z_loss_coef = 0.001
+# router: [batch * seq_len, d_model] -> [batch * seq_len, n_experts]
+router_logits = self.router(hidden_states)  # shape: [B*S, 8]
+router_probs = F.softmax(router_logits, dim=-1)
+topk_weights, topk_indices = torch.topk(router_probs, k=1, dim=-1)
 ```
 
-## 3. Architectural Decisions
+For top-1 routing, each token is dispatched to exactly one expert. The forward pass uses the hard assignment (weight = 1.0), but gradients flow through the soft probability via a straight-through estimator <Cite id="bengio2013" authors="Bengio et al." year={2013} />. This lets the router learn from the loss signal even though the forward is discrete.
 
-Before writing code, several choices needed resolution. I documented each as a decision record with alternatives considered.
+### Expert Initialization
 
-### 3.1 Why I Chose GPT-2 Small
+I initialized each expert as a `deepcopy` of the original pretrained MLP, plus a small amount of Gaussian noise (`std=0.01`). The model begins training with 8 copies of a working FFN rather than 8 random networks, which avoids the cold-start problem of learning from scratch. The noise breaks symmetry so experts can diverge during training.
 
-I considered the following options:
+### Auxiliary Losses
 
-1. GPT-2 Small (124M) (Radford et al., 2019) <Cite id="radford2019" authors="Radford et al." year={2019} />: OpenAI's 2019 model, well-documented
-2. Pythia-160M: More modern (2023), trained on The Pile
-3. Custom Tiny Llama: Modern architecture (RMSNorm, RoPE, SwiGLU) from scratch
+Two auxiliary losses prevent degenerate routing:
 
-**Trade-offs:**
+1. **Load balancing loss** <Cite id="fedus2022" authors="Fedus et al." year={2022} />: penalizes uneven expert utilization. Defined as `n_experts * sum(f_i * P_i)` where `f_i` is the fraction of tokens routed to expert `i` and `P_i` is the mean router probability for expert `i`. The minimum value is 1.0 at perfect balance. Coefficient: `lb_coef = 0.01`.
 
-GPT-2 is "old": GELU instead of SwiGLU, standard LayerNorm instead of RMSNorm, no rotary embeddings. But it's extremely well-understood. Papers have analyzed its behavior exhaustively. HuggingFace integration is mature.
+2. **Z-loss** <Cite id="zoph2022" authors="Zoph et al." year={2022} />: stabilizes router logit magnitudes. Defined as `mean(logsumexp(router_logits)^2)`. Prevents the router from producing extremely confident (or noisy) predictions. Coefficient: `z_coef = 0.001`.
 
-Pythia is more modern and trained on better data. But for studying MoE routing, architectural novelty isn't the point. I need a controlled baseline where observed effects can be cleanly attributed to MoE routing, not architectural quirks.
+The total loss is: `LM_loss + lb_coef * LB_loss + z_coef * Z_loss`.
 
-Custom from scratch was tempting but high-risk. With $80 budget, I can't afford to debug training instability. No pretrained weights means no warm-start: the experts would need to learn everything from scratch.
 
-**Decision:** GPT-2 Small.
+## 3. Training Setup
 
-The "old" architecture is a feature for this study. GPT-2's behavior is documented enough that I can isolate MoE effects. And crucially, pretrained weights enable warm-start: experts can begin as copies of a working MLP rather than random initialization.
+### Data
 
-### 3.2 Last 4 Layers
+Three domains, each capped at 10MB of raw text:
 
-GPT-2 has 12 transformer layers. How many should become MoE?
+| Domain | Source | Description |
+|--------|--------|-------------|
+| Code | CodeParrot-clean | Diverse Python files |
+| Math | MathQA <Cite id="amini2019" authors="Amini et al." year={2019} /> | Problem + rationale pairs |
+| Prose | C4 <Cite id="raffel2020" authors="Raffel et al." year={2020} /> | Filtered web text |
 
-**Options considered:**
+Texts are tokenized with the GPT-2 tokenizer, packed into 512-token blocks with domain labels, and token-balanced so each domain contributes equally to training batches. Without balancing, code produces 1.9x more tokens than prose, enough to bias expert routing toward code patterns.
 
-1. All 12 layers: maximum capacity increase
-2. Last 4 layers (8-11): focus on later layers
-3. Alternating layers: mix of early and late
+After balancing: 4,296 blocks per domain, 12,888 total (~6.6M tokens). At 10,000 steps with an effective batch size of 8, the model sees ~6 epochs of the data.
 
-**Trade-offs:**
+### Runs
 
-Research suggests transformer layers specialize hierarchically. Early layers learn generic features (syntactic patterns, common subwords). Later layers learn semantic and domain-specific features. If specialization is meaningful anywhere, it's in later layers where representations are already differentiated.
+| Run | Mode | Steps | Key Change |
+|-----|------|-------|------------|
+| Dense baseline | Dense GPT-2 | 5,000 | No MoE layers |
+| MoE main | Top-1, 8 experts | 10,000 | Primary experiment |
+| No-LB ablation | Top-1, lb_coef=0 | 2,000 (early-stopped at 500) | Tests necessity of load balancing |
+| Top-2 directional | Top-2, 8 experts | 10,000 | Tests whether a second expert helps |
 
-All 12 layers would cost 3x more compute for questionable benefit. Early layers might not benefit from MoE because they handle universal patterns anyway.
+All runs use `lr=5e-5`, cosine schedule, 10% warmup, `batch_size=2` with `grad_accum=4` (effective batch 8). All training ran on a single [PrimeIntellect](https://www.primeintellect.ai/) RTX 4090 24GB instance at $0.61/hr. Total GPU cost across all four runs, including setup and idle time: ~$2.79.
 
-Budget math: with last 4 layers, I save ~2/3 compute, leaving room for ablations (dense baseline, no-load-balancing collapse, top-2 comparison).
 
-**Decision:** Last 4 layers (8-11).
+## 4. Results
 
-This focuses MoE on semantic-level features where specialization is most interpretable. "This expert handles code semantics" is a cleaner narrative than "this expert handles... subword boundary patterns?"
+### Dense vs MoE
 
-### 3.3 8 Experts, Top-1 Routing
+![Evaluation loss over training for all four runs (left), and per-domain best evaluation loss comparison (right).](../../assets/research/expert-emergence-in-moe/training_curves.png)
 
-I considered the following options:
+| Metric | Dense | MoE (top-1) | Delta |
+|--------|-------|-------------|-------|
+| Eval loss | 2.157 | 2.080 | -3.6% |
+| Code loss | 1.554 | 1.521 | -2.1% |
+| Math loss | 2.023 | 1.740 | -14.0% |
+| Prose loss | 3.485 | 3.541 | +1.6% |
+| Perplexity | 8.64 | 7.91 | -8.4% |
 
-1. 4 experts, top-1: minimal configuration
-2. 8 experts, top-1: matches Switch Transformer
-3. 8 experts, top-2: standard in Mixtral
-4. 16 experts, top-2: higher capacity
+The MoE model wins on aggregate loss by 3.6%. Math sees the largest improvement at 14% because its structured problem-rationale format gives experts something concrete to specialize on. Code improves modestly at 2.1%. Prose is the one domain where MoE loses: the dense model beats it by 1.6%.
 
-**Trade-offs:**
+C4 web text is heterogeneous: news, forums, recipes, product descriptions, everything. There's no single "prose pattern" for an expert to latch onto. Math and code have learnable structural regularities; prose, at this scale, does not.
 
-Fewer experts means less capacity but easier analysis. With 4 experts and 3 domains, specialization might be forced by capacity constraints rather than emergent.
+> Note: These runs are not step-matched (5,000 dense vs 10,000 MoE), but the dense model had plateaued by step ~3,600, so additional steps would not have closed the gap.
 
-8 experts with top-1 matches the Switch Transformer configuration exactly. This is well-studied, budget-friendly, and provides enough experts that specialization can emerge naturally without being forced.
+### Training Dynamics
 
-Top-2 routing is more robust but complicates analysis. When a token routes to experts 3 and 7, which one "owns" that domain? Top-1 makes the mapping cleaner.
+The MoE model crossed the dense baseline at step ~3,600 (36% of training). Both models plateaued around step 7,000-8,000, with the MoE eval loss settling at 2.080 and the dense at 2.157. The learning rate had decayed to near-zero by that point (cosine schedule), and the small dataset was fully memorized.
 
-**Decision:** 8 experts, top-1 routing.
+Load balance stayed healthy throughout the MoE main run: `lb_loss` started at 1.056 during warmup and settled to 1.011 by step 1,000, holding there for the remaining 9,000 steps. Z-loss converged from 4.3 at step 200 down to 0.99 by step 8,000, indicating the router logits stabilized completely.
 
-Precedent from Switch Transformer, clean interpretability, and budget-friendly. If time permits, a short top-2 comparison run is a stretch goal.
 
-### 3.4 The Router Design
+## 5. Expert Specialization
 
-The router takes hidden states and outputs routing decisions:
+### Domain-Level Routing
 
-```
-Input: [batch×seq, hidden_dim]
-       ↓
-Linear projection: hidden_dim → n_experts
-       ↓
-[batch×seq, n_experts] logits
-       ↓
-Softmax → probabilities
-       ↓
-Top-k selection → indices and weights
-```
+The central question: do the experts develop domain preferences?
 
-The projection is just a linear layer without bias: `nn.Linear(hidden_dim, n_experts, bias=False)`. Each token's hidden state gets mapped to 8 scores (one per expert), softmaxed to probabilities, and the top-1 probability determines which expert handles that token.
+![Expert utilization fractions per domain across all four MoE layers. Uniform baseline is 0.125 (1/8 experts). Darker cells indicate higher utilization.](../../assets/research/expert-emergence-in-moe/expert_domain_heatmaps.png)
 
-## 4. The Warm-Start Decision
+Yes. The heatmaps show clear specialization patterns, especially in layers 8 and 10. In layer 10, expert 6 receives 0.260 of math tokens (vs the 0.125 uniform baseline), while getting only 0.075 of prose tokens. In layer 8, expert 4 gets 0.242 of math tokens but only 0.078 of code. Layer 8 shows some of the sharpest domain contrasts, while layer 11 stays more diffuse.
 
-How expert weights should be initialized was a difficult decision for me. It was likely to have the most dramatic impact on whether the approach would work at all.
+The routing is not perfectly disjoint (no expert handles only one domain), but the preferences are unambiguous. This is what you'd expect: the load balancing loss prevents full monopolization, so experts develop preferences rather than exclusive territories.
 
-### 4.1 The Problem
+### Router Entropy
 
-Converting a pretrained GPT-2 MLP to an 8-expert MoE requires weights for 8 experts. Where do they come from?
+![Per-layer router entropy over 10,000 training steps. Higher entropy means more uniform routing; lower entropy means sharper expert preferences.](../../assets/research/expert-emergence-in-moe/router_entropy_over_training.png)
 
-### 4.2 Options Considered
+Router entropy starts near the maximum (`ln(8) = 2.079`, representing uniform routing) and decreases over training as the router learns to make sharper decisions, moving from "send tokens everywhere equally" to "send this token to expert 4 specifically." The decline is steepest in the first 2,000 steps and plateaus by step 5,000, mirroring the eval loss convergence.
 
-**Option A: Random Initialization**
+Layers 9 and 10 show the lowest final entropy, meaning the router makes the sharpest per-token decisions in those layers. Layer 8 retains higher entropy: its router distributes probability more evenly across experts for any given token, even though the aggregate domain-level preferences are strong (as the heatmaps show). Per-token confidence and domain-level preference measure different things.
 
-Initialize expert weights randomly (Xavier/Kaiming), same as training from scratch.
+### Token-Level Routing
 
-Problem: This breaks pretrained representations. The attention layers in GPT-2 were trained to expect specific MLP behavior. Replacing the MLP with random weights breaks the whole model. Outputs become garbage. I'd have to retrain from scratch, defeating the point of using pretrained GPT-2.
+Beyond domain-level patterns, I analyzed how the router handles different Python token types within the code domain.
 
-Worse: I couldn't distinguish "specialization" from "learning to work at all." Any observed pattern could just be the model recovering basic function, not specialization.
+![Routing patterns for Python token types (keywords, names, numbers, strings, operators, comments, other) across 8 experts in layer 9.](../../assets/research/expert-emergence-in-moe/token_type_routing_layer9.png)
 
-**Option B: deepcopy of Original MLP**
+The router distinguishes between token types within the same domain. In layer 9, expert 0 handles 0.471 of NUMBER tokens and 0.429 of OP tokens, but only 0.125 of KEYWORDs. Expert 2 handles 0.447 of NAME tokens. The experts develop finer-grained preferences for syntactic roles, not just a coarse "this is code" distinction.
 
-Each expert = exact copy of the pretrained MLP, plus tiny noise for symmetry breaking.
+The analysis uses majority-vote mapping from BPE token spans to Python tokenizer categories, running 200 code samples through the final model and accumulating expert assignments per token type.
 
-All experts start identical. The model produces sensible outputs from step 0. Experts diverge from a known baseline. Clean interpretability: "experts started identical and diverged."
 
-**Option C: Expert 0 = Original, Others Random**
+## 6. Ablations
 
-Keep one expert as the original MLP, randomize the others.
+### Without Load Balancing
 
-Problem: asymmetric initialization. The router might just always pick Expert 0 because it's the only one that works. Analysis becomes confounded.
+The no-LB ablation removes the load balancing loss (`lb_coef = 0.0`) while keeping z-loss on (`z_coef = 0.001`). Is load balancing necessary, or will the router distribute tokens naturally?
 
-### 4.3 Decision: deepcopy + Tiny Noise
+![Expert utilization with load balancing (left) vs without (right) in layer 9. With LB, all 8 experts share tokens roughly equally. Without LB, a single expert dominates.](../../assets/research/expert-emergence-in-moe/collapse_comparison_layer9.png)
 
-I chose Option B. All experts begin as exact copies of the original MLP. Training stability is immediate; the model works from step 0. The interpretability is clean: "these experts started identical, and here's how they diverged."
+Expert collapse happened fast. The first warning fired at step 100 (expert 5 in layer 11 handling 62.5% of tokens). By step 500, expert 1 in layer 9 had captured 73.6% of all tokens, triggering automatic early stopping.
 
-### 4.4 Symmetry Breaking
+![Expert utilization trajectory over steps 100-500 without load balancing. Expert 1 (dominant, bold line) steadily absorbs tokens from other experts.](../../assets/research/expert-emergence-in-moe/collapse_trajectory_layer9.png)
 
-If all experts are identical, why would they ever diverge? The router has no reason to prefer one over another.
+The trajectory shows a classic collapse pattern: one expert begins with a slight advantage, the router reinforces that advantage by sending it more tokens, and the positive feedback loop accelerates until a single expert monopolizes the layer.
 
-The answer is tiny noise. After deepcopy, each expert's parameters get perturbed slightly:
+The no-LB model actually had *lower* LM loss than the MoE main run at step 400 (2.378 vs 2.493). Collapsing onto fewer experts can temporarily help optimization because the router doesn't need to learn distributed specialization. But this comes at the cost of dead experts and lost capacity.
 
-```python
-for i in range(num_experts):
-    expert = copy.deepcopy(original_mlp)
+Z-loss alone does not prevent collapse. It stabilizes the *magnitude* of router logits but has no mechanism to encourage balanced *distribution*. Of the two auxiliary losses, only lb_loss prevents collapse.
 
-    with torch.no_grad():
-        for param in expert.parameters():
-            noise = torch.randn_like(param) * param.std() * 1e-3
-            param.add_(noise)
-```
+### Top-2 vs Top-1
 
-### 4.5 The Critical Noise Formula
+The top-2 run routes each token to two experts with soft-weighted combination, doubling per-token expert compute. The main hypothesis: maybe two experts would help on prose, where top-1 routing struggles.
 
-The noise formula matters: `param.std() * 1e-3`.
+| Metric | Top-1 | Top-2 | Delta |
+|--------|-------|-------|-------|
+| Eval loss | 2.080 | 2.077 | -0.14% |
+| Code loss | 1.521 | 1.518 | -0.19% |
+| Math loss | 1.740 | 1.734 | -0.39% |
+| Prose loss | 3.541 | 3.540 | -0.03% |
+| lb_loss | 1.012 | 1.048 | +3.6% |
 
-**Why `param.std()` and not `param.norm()`?**
+The improvement is 0.14%, consistent across 50 eval checkpoints but practically negligible. Math sees the largest (still tiny) gain at 0.39%. Prose barely moved at 0.03%.
 
-The norm is the sum over all elements. For a weight matrix with millions of elements, the norm is enormous. Using `norm() * 1e-2` would corrupt pretrained weights.
+This aligns with the Switch Transformer finding <Cite id="fedus2022" authors="Fedus et al." year={2022} />: top-1 routing captures most of the MoE benefit. The additional expert path adds compute without meaningfully improving expressiveness at this scale.
 
-`std()` is scale-appropriate. It measures the typical magnitude of individual elements. `std() * 1e-3` means noise is 1000x smaller than typical weight values: enough to break symmetry but not enough to damage the pretrained weights.
+## 7. Limitations
 
-**What wrong scaling causes**
+**1.** GPT-2 small with 8 experts is far from production MoE systems like Mixtral <Cite id="jiang2024" authors="Jiang et al." year={2024} /> or Switch-C. Specialization patterns at this scale may not transfer to models with hundreds of experts.
 
-- Too large (1e-1): Experts start different enough that some produce bad outputs. Router might learn to avoid them entirely, causing dead experts from step 0.
-- Too small (1e-6): Symmetry doesn't break effectively. Experts stay identical for a long time, specialization emerges slowly or not at all.
-- Just right (1e-3): Experts are functionally identical but numerically distinct. As training proceeds, these tiny differences compound into specialization.
+**2.** Code, math, and prose are intentionally distinct. A harder test would be closely related domains (e.g., Python vs JavaScript, or algebra vs geometry) where the router needs to make finer distinctions.
 
-The verification tests confirmed this: warm-start parity shows relative error of 0.002-0.003, meaning the MoE output matches the original MLP within 0.3%. The noise is imperceptible to model behavior but sufficient for divergence.
+**3.** C4 was the wrong dataset for demonstrating prose specialization. I chose it over WikiText-103 to avoid encyclopedic bias ([decision 010](https://github.com/sumitdotml/moe-emergence/blob/main/docs/decisions/010-dataset-choices.md)), but C4's topic distribution (47% general web content, 14.5% commerce, 12% tech, and dozens of smaller categories) is too diffuse for any expert to specialize on. This showed up immediately in training: prose loss barely moved after step 1,000 and the MoE model never caught the dense baseline on this domain. A narrower corpus with structural regularity (literary fiction, scientific abstracts, news articles) would have given the router patterns to exploit, the way MathQA's problem-rationale format did for math.
 
-## 5. Phase 1: Core MoE Implementation
+**4.** The dense baseline ran for 5,000 steps; MoE runs went to 10,000. The dense model had plateaued, but a perfectly controlled comparison would use identical step counts.
 
-Started December 10, 2025. First commit: `0f73e73`.
+**5.** 10MB per domain, ~6 epochs of training. Larger datasets might reveal different specialization patterns or extend the region where MoE has an advantage.
 
-### 5.1 The Router Implementation
+**6.** Production MoE systems use a capacity factor to limit how many tokens each expert handles per batch, preventing overflow. I skipped this since the dataset is small enough that overflow wasn't a practical issue.
 
-The router's forward pass:
+## 8. Conclusion
 
-```python
-def forward(self, x: Tensor) -> RouterOutput:
-    # x is [batch, seqlen, hidden_dim]
+Expert specialization emerges reliably at small scale when the training data has domain structure. The MoE model's 14% improvement on math shows that structured, pattern-rich domains benefit most from expert routing. Prose -- heterogeneous web text with no dominant structure -- doesn't benefit, and actually regresses slightly.
 
-    # flattening the batch and sequence dimensions
-    _, _, hidden_dim = x.shape
-    x_flat = x.reshape(-1, hidden_dim)  # [batch*seqlen, hidden_dim]
+The load balancing loss is essential. Without it, expert collapse happens within hundreds of steps, and z-loss alone doesn't help. Top-1 routing is sufficient: a second expert per token doubles the compute without moving the loss.
 
-    # raw logits for all experts
-    router_logits = self.gate(x_flat)  # [batch*seqlen, n_experts]
+All training artifacts (checkpoints, metrics, W&B logs) and the analysis code are available in the [project repository](https://github.com/sumitdotml/moe-emergence). Models are on [HuggingFace](https://huggingface.co/sumitdotml/moe-emergence).
 
-    # cleaning probabilities for entropy logging (before noise)
-    router_probs_clean = torch.softmax(router_logits, dim=1)
-    entropy = -(router_probs_clean * torch.log(router_probs_clean + 1e-9)).sum(dim=-1)
-
-    # adding noise during training (if annealing is active)
-    if self.training and self.anneal_steps > 0 and self.training_step < self.anneal_steps:
-        progress = self.training_step.float() / self.anneal_steps.float()
-        current_noise_std = self.noise_std * (1.0 - progress)
-        noise = torch.randn_like(router_logits) * current_noise_std
-        routing_logits = router_logits + noise
-    else:
-        routing_logits = router_logits
-
-    # softmax on (potentially noisy) logits
-    router_probs = torch.softmax(routing_logits, dim=1)
-
-    # top-k selection
-    topk_weights, topk_indices = torch.topk(router_probs, k=self.topk)
-
-    # ... STE handling for top-1 ...
-
-    return RouterOutput(topk_weights, topk_indices, router_probs,
-                       router_probs_clean, router_logits, entropy)
-```
-
-### 5.2 Noisy Routing: Why I Added Noise
-
-When experts start as identical copies (warm-start), the router has no reason to prefer one over another. Without noise:
-
-- All experts get similar gradients
-- Specialization emerges slowly (or not at all)
-- Risk of "rich get richer": one expert dominates by chance
-
-With noise:
-
-- Different tokens randomly explore different experts
-- Experts receive diverse gradients → faster divergence
-- More robust specialization emerges
-
-### 5.3 Noise Annealing
-
-The noise anneals over training:
-
-```
-Step 0          Step 2500 (25%)        Step 10000
-|────────────────|────────────────────────|
-noise=0.1        noise=0.0               noise=0.0
-(exploration)    (exploitation)
-```
-
-Early training: high noise encourages exploration. Later training: noise drops to zero, letting the router's learned preferences dominate. This prevents confounding "confident routing" with "noise settling down."
-
-### 5.4 The STE Trick Explained
-
-For top-1 routing, there's a gradient problem. If I just use weight=1.0, the router never learns from the main LM loss because 1.0 is a constant with no connection to router parameters in the computation graph.
-
-**The Straight-Through Estimator (STE) solves this:** <Cite id="bengio2013" authors="Bengio et al." year={2013} />
-
-The goal is for forward to use 1.0 (hard assignment) but backward to flow gradients through soft probabilities.
-
-```python
-soft = topk_weights  # the actual router probability
-hard = torch.ones_like(soft)  # what I want in forward
-
-if self.training:
-    topk_weights = hard + (soft - soft.detach())  # STE
-else:
-    topk_weights = hard  # inference: deterministic
-```
-
-**How `hard + (soft - soft.detach())` works**
-
-- `soft.detach()` = same VALUE as soft, but DETACHED from gradient graph
-- `soft - soft.detach()` = 0 in forward (values cancel)
-- But in backward: `d/d(soft)[soft - soft.detach()] = 1 - 0 = 1`
-
-Forward pass: result = 1.0 + (0.7 - 0.7) = 1.0 ← We get the hard value.
-Backward pass: Gradient flows through `soft` → softmax → logits → router parameters. Router learns!
-
-This is subtle but critical. Without STE, the router only learns from load balancing loss, not the main LM loss. With STE, the router learns which experts actually help prediction.
-
-### 5.5 RouterOutput Structure
-
-```python
-class RouterOutput(NamedTuple):
-    topk_weights: Tensor    # [batch*seq, k] weights for selected experts
-    topk_indices: Tensor    # [batch*seq, k] which experts selected
-    router_probs: Tensor    # [batch*seq, n_experts] post-noise, for load balancing
-    router_probs_clean: Tensor  # [batch*seq, n_experts] pre-noise, for entropy
-    router_logits: Tensor   # raw logits, for z-loss
-    entropy: Tensor         # [batch*seq] per-token routing entropy
-```
-
-The split between `router_probs` (post-noise, for load balancing) and `router_probs_clean` (pre-noise, for entropy logging) is important. Entropy should measure router confidence, not noise level. If I computed entropy on noisy probs, it would decrease as noise anneals even if the router learned nothing.
-
-### 5.6 Expert Dispatch
-
-The dispatch loop is straightforward:
-
-```python
-results = torch.zeros_like(x_flat)
-
-for i, expert in enumerate(self.experts):
-    token_idx, topk_idx = torch.where(topk_indices == i)
-    if len(token_idx) == 0:
-        continue
-    results[token_idx] += topk_weights[token_idx, topk_idx].unsqueeze(-1) * expert(x_flat[token_idx])
-```
-
-For each expert, find which tokens are routed to it, run the expert on those tokens, and accumulate weighted outputs. This is a loop over experts, not batched. At small scale, the simplicity is worth the overhead.
-
-## 6. Phase 2: GPT-2 Integration
-
-The goal: surgically replace MLP layers with MoE layers while keeping everything else intact.
-
-### 6.1 The Surgery
-
-```python
-for layer_idx in [8, 9, 10, 11]:
-    original_mlp = model.transformer.h[layer_idx].mlp
-    moe_layer = MoEWrapper(
-        hidden_dim=768,
-        num_experts=8,
-        top_k=1,
-        original_ffn=original_mlp,  # deepcopy happens inside
-    )
-    model.transformer.h[layer_idx].mlp = moe_layer
-```
-
-What stays the same: attention layers, LayerNorm, embeddings, everything except the MLP in layers 8-11.
-
-What changes: the MLP gets replaced by an MoE wrapper containing 8 expert copies of that MLP.
-
-### 6.2 The 10-Test Verification Suite
-
-Before moving to data prep, I wrote a comprehensive verification script. The goal was to prove (not just believe) that the conversion worked correctly. Each test checks a specific property.
-
-**Test 1: Model loads without error.**
-
-Basic sanity. The converted model instantiates and the forward pass completes.
-
-**Test 2: Warm-start parity.**
-
-The MoE output should match the original MLP output closely. Since experts start as copies of the original MLP, the MoE should behave almost identically to the original model. "Almost" because of the tiny noise added for symmetry breaking.
-
-| Layer | Relative Error |
-| ----- | -------------- |
-| 8     | 0.0027         |
-| 9     | 0.0026         |
-| 10    | 0.0022         |
-| 11    | 0.0021         |
-
-All under 0.3%. The model behaves as expected.
-
-**Test 3: Forward pass produces expected shapes.**
-
-Input `[batch, seq, hidden_dim]` → output `[batch, seq, hidden_dim]`. Shapes preserved through the MoE conversion.
-
-**Test 4: Router produces valid distributions.**
-
-Router probabilities should sum to 1.0 per token, be non-negative, and have proper shape `[batch*seq, n_experts]`.
-
-**Test 5: Loss computation works.**
-
-Load balance loss and z-loss compute without NaN/Inf. Values are in expected ranges.
-
-| Layer | Load Balance Loss | Z-Loss |
-| ----- | ----------------- | ------ |
-| 8     | 1.13              | 4.32   |
-| 9     | 1.12              | 4.29   |
-| 10    | 1.13              | 4.31   |
-| 11    | 1.06              | 4.52   |
-
-Load balance loss near 1.0 indicates near-perfect balance, which makes sense before any training since the router hasn't learned preferences yet.
-
-Layer 11 has slightly lower LB loss (1.06 vs 1.13). Possibly the final layer's representations vary more, giving the router more signal even at initialization.
-
-**Test 6: Backward pass flows gradients.**
-
-Gradients flow through the MoE to all relevant parameters. This confirms STE is working.
-
-| Layer | Router Gradient Norm |
-| ----- | -------------------- |
-| 8     | 6.05                 |
-| 9     | 12.37                |
-| 10    | 16.34                |
-| 11    | 10.20                |
-
-Gradients exist and have reasonable magnitude. The variation across layers (layer 10 highest) matches typical gradient flow patterns in transformers.
-
-**Test 7: Noisy vs clean routing differs.**
-
-During training mode with noise enabled, router probabilities should differ from clean (no-noise) probabilities.
-
-| Layer | Mean \|noisy-clean\| |
-| ----- | -------------------- |
-| 8     | 9.06e-03             |
-| 9     | 9.80e-03             |
-| 10    | 1.01e-02             |
-| 11    | 1.14e-02             |
-
-The noise is present and measurable. Not so large that it corrupts behavior, but enough to encourage exploration.
-
-**Test 8: Expert selection varies.**
-
-Different tokens should route to different experts. If all tokens route to the same expert, something is wrong.
-
-Verified: across a batch of random inputs, all 8 experts receive at least some tokens.
-
-**Test 9: Attention masking preserved.**
-
-The MoE conversion shouldn't affect how attention masking works. Causal masking should still prevent attending to future tokens.
-
-Verified: max diff between batched and single-sequence inference is 9.92e-05 (numerical precision, not a bug).
-
-**Test 10: Generation works.**
-
-The converted model can generate coherent text.
-
-Prompt: "The meaning of life is"
-
-Generated:
-
-> The meaning of life is not the same as the meaning of death.
->
-> The meaning of life is not the same as
-
-Coherent continuation. The model works.
-
-### 6.3 Results Summary
-
-10/10 tests passed. Verification complete. Commit `a15683e`.
-
-## 7. Phase 3: Dataset Preparation
-
-Three domains: code, math, prose. This phase turned out to be more complex than expected. Dataset selection, formatting decisions, token balancing, and train/eval splitting all required careful thought.
-
-### 7.1 Dataset Selection Journey
-
-**Code: CodeParrot-clean**
-
-For code, I chose CodeParrot-clean <Cite id="codeparrot" authors="CodeParrot" year={2022} />: diverse Python repositories, accessible via HuggingFace streaming.
-
-The alternative was StarCoderData, which is larger and higher quality but requires Terms of Service acceptance. For a demo project, CodeParrot is sufficient and frictionless.
-
-What it contains: real Python code from GitHub. Functions, classes, imports, docstrings, comments. The variety is good for studying whether experts specialize in different code patterns (data processing vs. algorithms vs. web frameworks).
-
-**Math: The MathQA Journey**
-
-The original plan was GSM8K (grade school math) combined with MATH (competition math). But:
-
-- `hendrycks/competition_math` received a DMCA takedown
-- The HuggingFace loader for `allenai/math_qa` uses a deprecated script format
-
-So I pivoted to loading MathQA <Cite id="amini2019" authors="Amini et al." year={2019} /> directly from the source ZIP file.
-
-**What MathQA contains:** 29K word problems with step-by-step rationales.
-
-Example:
-
-```
-the banker's gain of a certain sum due 3 years hence at 10% per annum
-is rs. 36. what is the present worth?
-
-explanation: t = 3 years r = 10% td = (bg × 100) / tr = (36 × 100) / (3 × 10)
-= 12 × 10 = rs. 120 td = (pw × tr) / 100 ⇒ 120 = (pw × 3 × 10) / 100 ⇒
-1200 = pw × 3 pw = 1200 / 3 = rs. 400 answer: option a
-```
-
-The rationales are messy: inconsistent formatting, some have quotes, some have calculation errors that look like copy-paste artifacts. I accepted these as-is. Cleaning would add complexity for marginal benefit in a demo project.
-
-**Prose: The C4 Journey**
-
-Prose dataset selection involved the most investigation.
-
-During my first attempt, I was trying WikiText-103. Rejected for being too encyclopedic. Wiki-style prose is formal, structured, heavy on facts. Not representative of natural web text.
-
-Second attempt was me mostly comparing alternatives. I generated 100 random samples from both C4 (`allenai/c4`) and FineWeb (`HuggingFaceFW/fineweb`). Read through them. Compared style, variety, naturalness.
-
-C4 showed more natural, conversational prose: blog posts, how-to articles, forum discussions. FineWeb was higher quality but felt more curated, less varied. OpenWebText was also considered but rejected because news/article style overlaps with code documentation and README files.
-
-**Decision: AllenAI C4 (en).** <Cite id="raffel2020" authors="Raffel et al." year={2020} /> Most natural-sounding. Well-filtered (C4 already removes duplicates, boilerplate, etc.). Streams efficiently despite being 750GB total.
-
-### 7.2 The MathQA Format Decision
-
-With datasets selected, I had to decide how to format each text. Math was the interesting case.
-
-**Original format (from the plan):**
-
-```
-Problem: {question}
-
-Solution: {answer}
-```
-
-**The routing shortcut concern:**
-
-MoE routers look for the strongest signal. The token `Problem:` at the start of every math sequence is a very strong signal, stronger than the mathematical content itself. The router might learn "if it starts with 'Problem:', route to expert 5" rather than learning to recognize mathematical reasoning.
-
-This would confound the analysis. Expert specialization would reflect prefix recognition, not content understanding.
-
-**Investigation: Examining MathQA samples**
-
-I read through 30+ MathQA samples. The content naturally distinguishes math from other domains:
-
-- Numbers and percentages throughout
-- Arithmetic operators (×, /, +, -, ⇒)
-- Step-by-step calculations
-- Mathematical vocabulary ("ratio", "average", "percent", "find")
-
-The rationales already vary naturally in their openings:
-
-- "explanation: ..."
-- "let x be the total..."
-- "50 × x = 120 --> ..."
-- Direct calculations without preamble
-
-**Decision: No prefixes.**
-
-Format: `{Problem}\n\n{Rationale}`
-
-The content is distinguishable enough. No artificial markers needed. The router must learn from mathematical content, not prefix tokens.
-
-**The Unicode symbols discovery:**
-
-MathQA uses Unicode math symbols: `×` (multiplication), `⇒` (implies), `⋅` (dot). Should I convert to ASCII?
-
-Testing showed GPT-2's tokenizer handles Unicode correctly. `×` and `*` tokenize differently (tokens 13958 vs 1635). Round-trip works.
-
-I considered whether this could confuse the router since `*` appears in both code (`a * b`) and math (`40 * x = 120`). But the router sees context, not isolated tokens. At layers 8-11, a `*` in `def f(a,b): return a * b` has completely different hidden representations than in `40 * x = 120`. Surrounding tokens contextualize it.
-
-Domain signals are much stronger than symbol choice. Math has word problems, "find the value", reasoning chains. Code has `def`, `import`, indentation. These structural differences dwarf symbol notation.
-
-**Conclusion:** Keep Unicode as-is. Not a meaningful caveat for this project.
-
-### 7.3 Sequence Packing Implementation
-
-Standard transformer training pads each text to max_length, wasting compute on padding tokens. Sequence packing avoids this.
-
-**How it works:**
-
-1. Tokenize all texts
-2. Concatenate with EOS separators
-3. Chunk into fixed-size blocks (512 tokens)
-4. Each block may contain parts of multiple documents
-
-```python
-def pack_sequences(texts, tokenizer, block_size=512, domain_label=None):
-    all_tokens = []
-
-    for text in texts:
-        tokens = tokenizer.encode(text)
-        all_tokens.extend(tokens)
-        all_tokens.append(tokenizer.eos_token_id)  # separator
-
-    blocks = []
-    for i in range(0, len(all_tokens) - block_size + 1, block_size):
-        block_tokens = all_tokens[i : i + block_size]
-        blocks.append({
-            "input_ids": torch.tensor(block_tokens),
-            "domain": domain_label,
-        })
-
-    return blocks, len(all_tokens)
-```
-
-**Why I Chose 512 Tokens**
-
-GPT-2 supports up to 1024 context length. 512 is a reasonable middle ground: long enough for substantial context, short enough for efficient batching. Training literature often uses 512 or 1024 for pretraining.
-
-Each block gets a domain label (code/math/prose) for post-hoc analysis, but during training all blocks are shuffled together. The router doesn't see domain labels; it must learn from content.
-
-### 7.4 Token Imbalance Discovery
-
-This was an important empirical finding.
-
-- The assumption: 1MB of characters from each domain should give roughly equal training signal.
-
-- The test: Load 1MB from each domain. Count tokens.
-
-| Domain | Examples | Tokens  | Blocks (512 tok) |
-| ------ | -------- | ------- | ---------------- |
-| Code   | 274      | 415,076 | 810              |
-| Math   | 2,716    | 287,617 | 561              |
-| Prose  | 545      | 219,097 | 427              |
-
-- Finding: Code yields **1.9x more tokens** than prose for the same character count.
-
-**Why this happens:**
-
-Code has more ASCII characters per "unit of meaning." Python syntax uses lots of short tokens: `def`, `(`, `)`, `:`, `=`, `return`. Natural prose uses longer words that get tokenized into fewer tokens.
-
-Math is in between: numbers tokenize efficiently, but word problems contain prose-like sentences.
-
-**The implication:**
-
-Without balancing, the model sees ~2x more code tokens per epoch than prose tokens. Expert specialization could be confounded with exposure bias. A "code expert" might emerge simply because the router saw more code, not because the expert actually specialized.
-
-**The fix**: I added a `--balance-tokens` argument to the training script.
-
-When enabled, larger domains get truncated to match the smallest:
-
-```python
-if balance_tokens:
-    min_blocks = min(len(code_blocks), len(math_blocks), len(prose_blocks))
-    code_blocks = code_blocks[:min_blocks]
-    math_blocks = math_blocks[:min_blocks]
-    prose_blocks = prose_blocks[:min_blocks]
-```
-
-This ensures equal exposure per domain. Required for training runs.
-
-## 8. Data Pipeline Integrity
-
-Two additional concerns required attention: train/eval splitting and truncation bias.
-
-### 8.1 The Train/Eval Split Decision
-
-Without a held-out evaluation set, I can't distinguish "expert specialization" from "expert memorization." Any observed pattern could be overfitting rather than generalization.
-
-An issue I dealt with was the block-level split problem. As a naive approach, I was packing all texts into blocks, then splitting blocks into train/eval.
-
-This caused data leakage. A single document can span multiple blocks. If blocks 47 and 48 both contain parts of the same Python file, and block 47 is in train while block 48 is in eval, the model has "seen" part of the eval data during training.
-
-The solution was to split at the text level before packing.
-
-1. Load texts for each domain
-2. Shuffle texts deterministically
-3. Split into train/eval at text level (5% held out)
-4. Pack train texts → train blocks
-5. Pack eval texts → eval blocks
-
-This, I believe, prevents document leakage. The eval signal should now be meaningful.
-
-The holdout formula that I used:
-
-```python
-n_eval_texts = min(max(10, int(len(texts) * 0.05)), int(len(texts) * 0.10))
-```
-
-- At least 10 texts (for statistical reliability with small datasets)
-- Target 5% of texts
-- Capped at 10% (to protect small domains from having too few train examples)
-
-### 8.2 Shuffle-Before-Truncate
-
-When token balancing truncates larger domains, naive slicing (`blocks[:min_blocks]`) systematically discards the tail.
-
-If there's any systematic pattern in text ordering (longer texts at the end, different topics at the end), truncation could introduce bias.
-
-I ran empirical tests on 3MB of code data (2479 blocks).
-
-| Metric         | First Half | Last Half | Difference    |
-| -------------- | ---------- | --------- | ------------- |
-| Newline tokens | 5.54%      | 5.48%     | 0.06%         |
-| Space tokens   | 29.88%     | 30.97%    | 1.09%         |
-| Avg token ID   | 4206.9     | 4150.1    | 0.1% of vocab |
-
-The findings were minimal difference. The text-level shuffle in `split_texts_for_eval()` already randomizes ordering before packing.
-
-I decided to shuffle blocks before truncating anyway.
-
-The benefit is marginal but the cost is near-zero: 4 lines of code. It's a defensive measure against future pipeline changes and follows standard practice of uniform sampling.
-
-```python
-if balance_tokens:
-    min_blocks = min(len(code_blocks), len(math_blocks), len(prose_blocks))
-
-    rng = random.Random(seed)  # seeded for reproducibility
-    rng.shuffle(code_blocks)
-    rng.shuffle(math_blocks)
-    rng.shuffle(prose_blocks)
-
-    code_blocks = code_blocks[:min_blocks]
-    math_blocks = math_blocks[:min_blocks]
-    prose_blocks = prose_blocks[:min_blocks]
-```
-
-The seeded RNG is important. Training runs must be reproducible: same seed should produce same blocks selected.
-
-## 9. The Dual Entropy Insight
-
-During a code review of `tracking.py`, a reviewer caught something non-obvious about entropy measurement.
-
-### 9.1 Two Different Entropies
-
-The router computes **per-token entropy**:
-
-```python
-entropy = -(probs * torch.log(probs + 1e-9)).sum(dim=-1)  # [n_tokens]
-```
-
-The tracking code was computing **distribution entropy**:
-
-```python
-avg_probs = probs.mean(dim=0)  # [n_experts]
-entropy = -(avg_probs * torch.log(avg_probs + 1e-10)).sum()  # scalar
-```
-
-These measure different things.
-
-### 9.2 Example Where They Diverge
-
-Let me consider a batch where every token routes to exactly one expert with probability 1.0, but different tokens pick different experts uniformly.
-
-Per-token entropy = 0
-
-Each token has a peaked distribution: [0, 0, 1, 0, 0, 0, 0, 0]. Entropy of a peaked distribution is 0. The router is maximally confident about each token.
-
-Distribution entropy = log(8) ≈ 2.08
-
-Averaging across tokens: each expert gets probability 1/8. The aggregate distribution is uniform. Entropy of a uniform distribution is maximal.
-
-### 9.3 Why Both Matter
-
-For specialization analysis:
-
-Per-token entropy answers: "Is the router confident?" As training proceeds, per-token entropy should decrease if the router is learning clear preferences. Track this to monitor specialization emergence.
-
-Distribution entropy answers: "Are tokens spread evenly across experts?" High distribution entropy means good load balancing. Low distribution entropy means some experts dominate.
-
-A model could have low per-token entropy (confident routing) with either high or low distribution entropy (balanced or unbalanced load). Both metrics are needed for complete analysis.
-
-The tracking code now reports both:
-
-```python
-def compute_routing_metrics(router_probs):
-    # Per-token entropy
-    per_token_entropy = -(router_probs * torch.log(router_probs + 1e-9)).sum(dim=-1)
-    avg_per_token_entropy = per_token_entropy.mean()
-
-    # Distribution entropy
-    avg_probs = router_probs.mean(dim=0)
-    dist_entropy = -(avg_probs * torch.log(avg_probs + 1e-10)).sum()
-
-    return avg_per_token_entropy, dist_entropy
-```
-
-## 10. Bugs Caught
-
-Code reviews found several issues before training. Fixing them ahead of time prevents wasted compute.
-
-### 10.1 Key Name Mismatch
-
-The tracking code expected `expert_indices` but the actual key is `topk_indices`. A simple fix but would have caused runtime errors during training.
-
-### 10.2 Noisy Probs for Entropy
-
-The original code computed entropy on noisy probabilities. This would confound noise level with routing confidence: entropy would decrease as noise anneals even if the router learned nothing. Fixed by using `router_probs_clean`.
-
-### 10.3 Hardcoded Layer Indices
-
-Default `[8, 9, 10, 11]` was hardcoded even though the auxiliary output dict contains `layer_idx`. Would have broken if someone changed which layers are MoE. Fixed to derive layer indices from the aux data.
-
-### 10.4 STE During Inference
-
-The Straight-Through Estimator was being applied during inference. STE is only needed during training to flow gradients. During inference, I want clean deterministic routing without the gradient trick overhead. Fixed with a training mode check.
-
-## 11. Reflections So Far
-
-After three phases, some observations:
-
-### 11.1 Empirical Testing Matters
-
-Reading about warm-start is different from verifying it with a 10-test suite. The verification numbers (0.2% relative error) proved the approach works. Without tests, I'd have uncertainty about whether the MoE conversion preserved model behavior.
-
-### 11.2 Token Imbalance Was a Surprise
-
-Equal character counts don't mean equal token counts. The 1.9x ratio between code and prose surprised me. Without measuring, I might have run training with skewed exposure and drawn wrong conclusions about specialization.
-
-### 11.3 Small Budget Means I Had to Prioritize
-
-$80 meant I had to prioritize with some noticeable compromises. Dense baseline and MoE main run were non-negotiable. No-LB ablation demonstrated collapse. Top-2 was a stretch goal. The constraint was clarifying.
-
-### 11.5 What I'd Do Differently
-
-I should have started with verification tests earlier. I wrote them for Phase 2 but should have written them for Phase 1. Testing `compute_load_balance_loss` in isolation would have caught the theoretical minimum = 1.0 misunderstanding earlier.
-
-## 12. What's Next
-
-**Phase 4: Training Infrastructure**
-
-- Training loop combining LM loss + LB loss + Z loss
-- Checkpointing and model saving
-- W&B integration for metrics tracking
-- Learning rate scheduling
-
-**Phase 5: Experiments**
-
-- Dense baseline (required): train without MoE for comparison
-- MoE main run (required): the core experiment
-- No-LB collapse ablation (required): show what happens without load balancing
-- Top-2 ablation (optional): if budget allows, compare routing strategies
-
-**Phase 6: Analysis**
-
-- Expert-domain affinity heatmaps
-- Entropy curves over training
-- Routing pattern visualizations
-- Load balancing effectiveness analysis
-
-### 12.1 Budget Allocation
-
-The $80 constraint shapes the plan:
-
-1. Dense baseline: ~$15. Needed for comparison. Can't claim MoE effects without knowing what dense performance looks like.
-2. MoE main run: ~$35. The core experiment. Needs enough steps for specialization to emerge (or fail to emerge).
-3. No-LB ablation: ~$15. Should demonstrate collapse quickly. Early-stop once collapse is evident; no need to run to completion.
-4. Top-2 ablation: ~$15 if remaining. Stretch goal. Compare top-2 routing to top-1.
-
-If Phase 5 reveals issues (training instability, unclear results), the ablations would get cut before the main run does.
-
-## Acknowledgments
-
-Claude Opus 4.5 (primary) and GPT-5.2 (sparsely) have been used in this project for research assistance,
-studying MoE concepts, and quick code verifications (dataset, naive tests, etc.).
-
-## Third-Party Notices
-
-This project uses third-party datasets and libraries. See <a href="https://github.com/sumitdotml/moe-emergence/blob/main/THIRD-PARTY-NOTICES.md" target="_blank">third party notices</a> for full attribution and license information.
-
-<section class="references">
 
 ## References
 
-<Ref
-	id="shazeer2017"
-	authors="Shazeer, N., Azalia, M., Davis, C., Le, Q., Hinton, G., and Dean, J."
-	year={2017}
-	title="Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer"
-	arxiv="1701.06538"
-/>
+<Ref id="jacobs1991"
+  authors="Jacobs, R. A., Jordan, M. I., Nowlan, S. J., and Hinton, G. E."
+  year={1991}
+  title="Adaptive mixtures of local experts"
+  venue="Neural Computation"
+  volume="3(1)"
+  pages="79-87"
+  url="https://doi.org/10.1162/neco.1991.3.1.79" />
 
-<Ref
-	id="fedus2021"
-	authors="Fedus, W., Zoph, B., and Shazeer, N."
-	year={2021}
-	title="Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity"
-	arxiv="2101.03961"
-/>
+<Ref id="shazeer2017"
+  authors="Shazeer, N., Mirhoseini, A., Maziarz, K., Davis, A., Le, Q., Hinton, G., and Dean, J."
+  year={2017}
+  title="Outrageously large neural networks: The sparsely-gated mixture-of-experts layer"
+  arxiv="1701.06538" />
 
-<Ref
-	id="zoph2022"
-	authors="Zoph, B., Bello, I., Kumar, S., Du, N., Huang, Y., Dean, J., Shazeer, N., and Fedus, W."
-	year={2022}
-	title="ST-MoE: Designing Stable and Transferable Sparse Expert Models"
-	arxiv="2202.08906"
-/>
+<Ref id="fedus2022"
+  authors="Fedus, W., Zoph, B., and Shazeer, N."
+  year={2022}
+  title="Switch Transformers: Scaling to trillion parameter models with simple and efficient sparsity"
+  venue="Journal of Machine Learning Research"
+  volume="23(120)"
+  pages="1-39"
+  url="https://jmlr.org/papers/v23/21-0998.html" />
 
-<Ref
-	id="jiang2024"
-	authors="Jiang, A. Q., Sablayrolles, A., Roux, A., Mensch, A., Savary, B., Bamford, C., Chaplot, D. S., de las Casas, D., Hanna, E. B., Bressand, F., Lengyel, G., Bour, G., Lample, G., Lavaud, L. R., Saulnier, L., Lachaux, M.-A., Stock, P., Subramanian, S., Yang, S., Antoniak, S., Le Scao, T., Gerber, T., Vart, T., Wang, X., and El Sayed, W."
-	year={2024}
-	title="Mixtral of Experts"
-	arxiv="2401.04088"
-/>
+<Ref id="zoph2022"
+  authors="Zoph, B., Bello, I., Kumar, S., Du, N., Huang, Y., Dean, J., Shazeer, N., and Fedus, W."
+  year={2022}
+  title="ST-MoE: Designing stable and transferable sparse expert models"
+  arxiv="2202.08906" />
 
-<Ref
-	id="radford2019"
-	authors="Radford, A., Wu, J., Child, R., Luan, D., Amodei, D., and Sutskever, I."
-	year={2019}
-	title="Language Models are Unsupervised Multitask Learners"
-	url="https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf"
-/>
+<Ref id="jiang2024"
+  authors="Jiang, A. Q., Sablayrolles, A., Roux, A., Mensch, A., Savary, B., Bamford, C., Chaplot, D. S., de las Casas, D., Hanna, E. B., Bressand, F., Lenber, G., Bour, G., Lample, G., Lavaud, L. R., Saulnier, L., Lachaux, M.-A., Stock, P., Subramanian, S., Yang, S., Antoniak, S., Le Scao, T., Gerber, T., Vayer, T., Roux, T., Lavril, T., and El Sayed, W."
+  year={2024}
+  title="Mixtral of Experts"
+  arxiv="2401.04088" />
 
-<Ref
-	id="bengio2013"
-	authors="Bengio, Y., Léonard, N., and Courville, A."
-	year={2013}
-	title="Estimating or Propagating Gradients Through Stochastic Neurons for Conditional Computation"
-	arxiv="1308.3432"
-/>
+<Ref id="radford2019"
+  authors="Radford, A., Wu, J., Child, R., Luan, D., Amodei, D., and Sutskever, I."
+  year={2019}
+  title="Language models are unsupervised multitask learners"
+  url="https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf" />
 
-<Ref
-	id="amini2019"
-	authors="Amini, A., Gabriel, S., Lin, S., Koncel-Kedziorski, R., Choi, Y., and Hajishirzi, H."
-	year={2019}
-	title="MathQA: Towards Interpretable Math Word Problem Solving with Operation-Based Formalisms"
-	venue="NAACL 2019"
-	url="https://aclanthology.org/N19-1245/"
-/>
+<Ref id="bengio2013"
+  authors="Bengio, Y., Léonard, N., and Courville, A."
+  year={2013}
+  title="Estimating or propagating gradients through stochastic neurons for conditional computation"
+  arxiv="1308.3432" />
 
-<Ref
-	id="raffel2020"
-	authors="Raffel, C., Shazeer, N., Roberts, A., Lee, K., Narang, S., Matena, M., Zhou, Y., Li, W., and Liu, P. J."
-	year={2020}
-	title="Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer"
-	venue="JMLR"
-	arxiv="1910.10683"
-/>
+<Ref id="amini2019"
+  authors="Amini, A., Gabriel, S., Lin, P., Koncel-Kedziorski, R., Choi, Y., and Hajishirzi, H."
+  year={2019}
+  title="MathQA: Towards interpretable math word problem solving with operation-based formalisms"
+  venue="NAACL"
+  url="https://aclanthology.org/N19-1245/" />
 
-<Ref
-	id="codeparrot"
-	authors="CodeParrot"
-	year={2022}
-	title="codeparrot-clean dataset"
-	url="https://huggingface.co/datasets/codeparrot/codeparrot-clean"
-/>
+<Ref id="raffel2020"
+  authors="Raffel, C., Shazeer, N., Roberts, A., Lee, K., Narain, S., Matena, M., Zhou, Y., Li, W., and Liu, P. J."
+  year={2020}
+  title="Exploring the limits of transfer learning with a unified text-to-text transformer"
+  venue="Journal of Machine Learning Research"
+  volume="21(140)"
+  pages="1-67"
+  url="https://jmlr.org/papers/v21/20-074.html" />
 
-</section>
+
+## Appendix: Design Decisions
+
+Three design choices shaped this project. Full decision records with alternatives considered are in the [project repository](https://github.com/sumitdotml/moe-emergence/tree/main/docs/decisions).
+
+**GPT-2 as base model.** The goal is observing MoE routing behavior, not pushing performance. GPT-2 small is thoroughly documented, has stable HuggingFace integration, and fits within an $80 GPU budget. Its simplicity (no RoPE, no GQA, standard LayerNorm) means any observed effects can be attributed to the MoE routing rather than architectural quirks. More modern alternatives (Pythia-160M, custom Llama-style) were considered but added complexity without clear benefit for a pedagogical study.
+
+**MoE in the last 4 layers.** Early Transformer layers tend to learn generic features (syntax, common patterns), while later layers learn more semantic, domain-specific features. Replacing all 12 layers with MoE would cost ~3x the compute and make it harder to interpret whether specialization reflects domain structure or just low-level token statistics. Layers 8-11 are where domain-specific routing is most meaningful, and the compute savings left budget for ablations.
+
+**Warm-start via deepcopy.** Each expert starts as an exact copy of the pretrained MLP, plus tiny Gaussian noise (`std = param.std() * 1e-3`) for symmetry breaking. This means the model works identically at step 0 and experts diverge from a known baseline. Random initialization would break pretrained representations and confound "learning to specialize" with "learning to function at all." The noise scale matters: using `param.norm()` instead of `param.std()` would corrupt weights because the norm sums over millions of elements.
+
