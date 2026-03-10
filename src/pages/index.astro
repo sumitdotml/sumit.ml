@@ -30,14 +30,14 @@ const footnotes = [
 		<main>
 			<h1 class="hero-title">Hi, I'm Sumit</h1>
 			<p>Tokyo-based SWE, aspiring ML Researcher</p>
-		<Image
-			src={homepageHero}
-			alt="Homepage Hero"
-			priority
-			loading="eager"
-			width={170}
-			class="hero-image"
-		/>
+			<Image
+				src={homepageHero}
+				alt="Homepage Hero"
+				priority
+				loading="eager"
+				width={170}
+				class="hero-image"
+			/>
 
 			<h3>Preface</h3>
 			<p>
@@ -46,28 +46,57 @@ const footnotes = [
 				if you want to read a little bit about me, that's a good place.
 			</p>
 			<p>
-				Right now, I'm particularly interested in LLMs, mechinterp, and
-				low-resource language research<FootnoteRef id="1" />.
+				Right now, I'm particularly interested in LLMs (mostly architectures +
+				finetuning), MlSys, and low-resource language research<FootnoteRef
+					id="1"
+				/>.
 			</p>
+
+			<h3>Lately...</h3>
+			<p>These days, I've been primarily busy with:</p>
+			<ul>
+				<li>
+					Low resource language research: building datasets, effective
+					benchmarking, tokenization methods, and grants to train models to
+					understand low resource languages of my country. For details, see <Link
+						href="https://techfornepal.com/"
+						fontWeight="semibold">here</Link
+					>.
+				</li>
+				<li>
+					Learning MLSys: kernel optimizations, HPC, inference serving, etc.
+				</li>
+				<li>Lots of weekly hackathons and ML events in Tokyo</li>
+				<li>
+					and doing multiple projects with relevance to the above, publishing
+					blog posts as well as worklogs :)
+				</li>
+			</ul>
+
 			<h3>Looking for Mentorship</h3>
 			<p>
-				I'm actively looking for mentorship in ML research! I'm particularly
-				interested in LLM training, inference optimization, mechinterp,
-				fine-tuning, and multilingual/low-resource language research: including
-				but not limited to dataset curation, tokenization strategies,
-				cross-lingual transfer, and model adaptation for underrepresented
-				languages. Now with that being said, I'm genuinely open to exploring
-				other areas of deep learning if the problems are compelling and the
-				learning opportunity is strong (which might be pretty much every time if
-				you're doing something interesting). I'm still figuring out what I don't
-				know right now, which is exactly why I want to work alongside someone
-				doing real research.
+				I'm currently a solo researcher, and I believe that mentorship in ML
+				research could be mutually valuable! I'm particularly interested in LLM
+				training, inference optimization, fine-tuning, and low-resource language
+				research, including but not limited to dataset curation, tokenization
+				strategies, cross-lingual transfer, and model adaptation for
+				underrepresented languages. If you think some of my research interests
+				or efforts are worthwhile for mentorship or collaboration, please reach
+				out!
+			</p>
+			<p>
+				Now with that being said, I'm genuinely open to exploring other areas of
+				deep learning if the problems are compelling and the learning
+				opportunity is strong (which might be pretty much every time if you're
+				doing something interesting). I'm still figuring out what I don't know
+				right now, which is exactly why I want to work alongside someone doing
+				real research.
 			</p>
 			<p>
 				My battle-tested method to learn has always been to put myself under
 				immense pressure from where the only option to survive is via quick
-				learning and adaptation. I love learning by doing: working on real
-				problems, asking questions, being wrong, and building up intuition
+				learning and adaptation. I love learning by doing; I love working on
+				real problems, asking questions, being wrong, and building up intuition
 				alongside someone who knows what they're doing. Therefore, if you're
 				working on interesting problems and think having someone with relentless
 				curiosity and motivation alongside you could be mutually valuable, I'd
@@ -87,8 +116,8 @@ const footnotes = [
 			<p>
 				You can also check out my <Link href="/blog" fontWeight="medium"
 					>blog</Link
-				>
-				for project updates and worklogs, or just throw me a message on the aforementioned
+				> or <Link href="/research" fontWeight="medium">research</Link>
+				pages for project updates and worklogs, or just throw me a message on the aforementioned
 				links if you wanna chat about stuff :)
 			</p>
 
