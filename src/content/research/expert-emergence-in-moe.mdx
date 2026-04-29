@@ -23,7 +23,7 @@ import Ref from "../../components/research/Ref.astro";
 
 ## TL;DR
 
-I trained a GPT-2-based MoE model on three domains (code, math, prose) to see whether experts develop routing preferences. They do. The MoE model beats a dense baseline by 3.6% on aggregate eval loss, with math seeing the largest gain (14%) and prose the only regression (1.6%). Removing the load balancing loss causes full expert collapse within 500 training steps. Top-2 routing provides a negligible 0.14% improvement over top-1, confirming that a single active expert per token captures most of the benefit.
+I trained a GPT-2-based MoE model on three domains (code, math, prose) to see whether experts develop routing preferences, and they do! The MoE model beats a dense baseline by 3.6% on aggregate eval loss, with math seeing the largest gain (14%) and prose the only regression (1.6%). Removing the load balancing loss causes full expert collapse within 500 training steps. Top-2 routing provides a negligible 0.14% improvement over top-1, confirming that a single active expert per token captures most of the benefit.
 
 ## 1. Motivation
 
