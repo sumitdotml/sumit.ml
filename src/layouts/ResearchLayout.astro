@@ -2,6 +2,8 @@
 import "../styles/research.css";
 import type { ImageMetadata } from "astro";
 import { FileText } from "lucide-astro";
+import ThemeToggle from "../components/ThemeToggle.astro";
+import ThemeInit from "../components/scripts/ThemeInit.astro";
 import ViewCounter from "../components/ViewCounter.astro";
 import FallbackImage from "../assets/placeholder-1.png";
 
@@ -124,9 +126,13 @@ const lastRevisionDate = hasRevisions ? sortedRevisions[0].date : null;
 		<meta property="twitter:title" content={title} />
 		<meta property="twitter:description" content={metaDescription} />
 		<meta property="twitter:image" content={imageURL} />
+		<ThemeInit />
 	</head>
 
 	<body>
+		<div class="research-theme-toggle">
+			<ThemeToggle />
+		</div>
 		<article class="research">
 			<header class="research-header">
 				<h1 class="research-title">{title}</h1>
