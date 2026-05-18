@@ -462,6 +462,12 @@ a:hover {
 }
 
 @media (max-width: 760px) {
+	.research-theme-toggle {
+		position: absolute;
+		top: 0.75rem;
+		right: 0.75rem;
+	}
+
 	.research-content table {
 		display: block;
 		width: 100%;
