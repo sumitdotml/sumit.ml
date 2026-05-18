@@ -1,5 +1,5 @@
 ---
-title: "LoRA and Friends: A Small Target-Module Study On Qwen3-8B Math SFT"
+title: " Is Attention Enough? A LoRA Target-Module Study on Qwen3-8B Math SFT"
 subtitle: "A controlled comparison of attention-only and all-layer LoRA on Qwen3-8B using an OpenMathInstruct-2-derived math SFT dataset and GSM8K evaluation."
 image: "../../assets/research/lora-and-friends/fig_04_paired_seed_slope.png"
 date: 2026-05-17
@@ -23,7 +23,7 @@ import Ref from "../../components/research/Ref.astro";
 
 ## TL;DR
 
-This experiment fine-tuned `Qwen3-8B` <Cite id="qwen3" authors="Yang et al." year={2025} /> on a math SFT dataset derived from `nvidia/OpenMathInstruct-2` <Cite id="openmathinstruct2" authors="Toshniwal et al." year={2024} /> and compared two LoRA <Cite id="lora" authors="Hu et al." year={2021} /> adapter scopes on GSM8K <Cite id="gsm8k" authors="Cobbe et al." year={2021} />. Attention-only LoRA reached mean GSM8K accuracy `0.9055` across `N=3` seeds, while all-layer LoRA reached `0.9009`. The `0.455` percentage-point gap favors attention-only in this run set, but it is below the frozen `0.01` accuracy threshold for a winner claim, so the technical reading is a directional edge inside a small-seed, single-benchmark case study.
+This experiment fine-tuned `Qwen3-8B` <Cite id="qwen3" authors="Yang et al." year={2025} /> on a math SFT dataset derived from `nvidia/OpenMathInstruct-2` <Cite id="openmathinstruct2" authors="Toshniwal et al." year={2024} /> and compared two LoRA <Cite id="lora" authors="Hu et al." year={2021} /> adapter scopes on GSM8K <Cite id="gsm8k" authors="Cobbe et al." year={2021} />. Attention-only LoRA reached mean GSM8K accuracy `0.9055` across `N=3` seeds, while all-layer LoRA reached `0.9009`. The `0.455` percentage-point gap favors attention-only in this run set, but it is below the frozen `0.01` accuracy threshold for a winner claim that I had set in advance. Therefore, this technical reading is a directional edge inside a small-seed, single-benchmark case study and I treated the result as directional evidence under this setup, not as a general claim that attention-only LoRA is better.
 
 **Published artifacts.**
 
@@ -36,9 +36,9 @@ This experiment fine-tuned `Qwen3-8B` <Cite id="qwen3" authors="Yang et al." yea
 
 ## 1. Motivation
 
-LoRA adapts a frozen model by training low-rank updates rather than updating the full parameter set. The method is often treated as a single switch: choose a rank, choose a learning rate, and decide which modules receive adapters. This study isolates the last choice under one narrow setup.
+LoRA adapts a frozen model by training low-rank updates rather than updating the full parameter set. The method is often treated as a single straightforward switch: you choose a rank, then a learning rate, and then decide which modules receive adapters. I did this study to isolate the last choice under one narrow setup.
 
-The practical question was whether adding MLP adapters helps a small math SFT run on `Qwen3-8B`, or whether attention-only adapters are enough. The project intentionally keeps the scope small: one base model, one dataset recipe, one benchmark, rank `8`, and three seeds per LoRA condition.
+The practical question was whether adding MLP adapters helps a small math SFT run on `Qwen3-8B`, or whether attention-only adapters are enough. I intentionally kept the scope small: one base model, one dataset recipe, one benchmark, rank `8`, and three seeds per LoRA condition.
 
 ## 2. Experimental Question
 
@@ -47,9 +47,9 @@ The comparison was:
 - `attention_only`: train adapters for `q_proj`, `k_proj`, `v_proj`, and `o_proj`.
 - `all_layer`: train those attention adapters plus `gate_proj`, `up_proj`, and `down_proj`.
 
-Both conditions used the same rendered dataset, base model, rank, selected peak learning rate, training schedule, checkpoint-selection rule, and GSM8K eval contract. The intended variable was adapter scope.
+Both conditions used the same rendered dataset, base model, rank, selected peak learning rate, training schedule, checkpoint-selection rule, and GSM8K eval contract so that I could draw comparisons in the most unbiased way possible. The intended variable was adapter scope.
 
-The frozen interpretation rule bounds how that mean gap can be read. A condition mean gap below `0.01` accuracy must be reported as inconclusive rather than as a winner. The observed mean gap is `0.0045489006823352`, so the article treats the result as directional evidence under this setup, not as a general claim that attention-only LoRA is better.
+The frozen interpretation rule  how that mean gap can be read. A condition mean gap below `0.01` accuracy was to be reported as inconclusive rather than as a winner. The observed mean gap was `0.0045489006823352`, so I treated the result as directional evidence under this setup, not as a general claim that attention-only LoRA is better. 
 
 ## 3. Dataset And Evaluation Contract
 
