@@ -407,6 +407,29 @@ a:hover {
 	width: auto;
 }
 
+@media (max-width: 760px) {
+	.research-content table {
+		display: block;
+		width: 100%;
+		min-width: 0;
+		max-width: 100%;
+		margin: 1.25rem 0;
+		transform: none;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.research-content table:has(thead th:nth-child(2):last-child) {
+		width: 100%;
+		max-width: 100%;
+	}
+
+	.research-content th,
+	.research-content td {
+		white-space: nowrap;
+	}
+}
+
 .research-content img {
 	max-width: 100%;
 	height: auto;
