@@ -8,8 +8,6 @@ dateLabels:
   published: "Last updated: "
 ---
 
-> WIP: This is the first draft of the worklog. It is not yet formatted properly.
-
 This is the worklog version of the [LoRA and Friends](/research/lora-and-friends) experiment.
 
 The final public artifacts are:
@@ -590,7 +588,7 @@ Aggregated by condition:
 
 ![GSM8K accuracy by condition](../../assets/blog/lora-target-module-worklog/fig_03_gsm8k_accuracy_chart.png)
 
-The mean gap was `0.0045489006823352`, or about `0.455` percentage points, in favor of attention-only. Under the frozen rule, that is below the `0.01` threshold for a winner claim. So the honest reading is directional: attention-only ended higher in this run set, but the result stays inside the pre-declared inconclusive band.
+The mean gap was `0.0045489006823352`, or about `0.455` percentage points, in favor of attention-only. Under the frozen rule, that is below the `0.01` threshold for a winner claim. So the honest reading is local: attention-only ended higher in this run set and used a smaller adapter, but the result stays inside the pre-declared inconclusive band.
 
 ### The disagreement view made the result easier to read
 
@@ -677,4 +675,4 @@ The final comparison was the easy sentence at the end of a lot of setup.
 
 The result is small, but the path to making it trustworthy was not.
 
-If I were doing the next version, I would keep the same discipline: narrow the question first, freeze contracts before seeing benchmark numbers, treat dataset audits as part of the experiment, and make every convenience change prove that it does not change the comparison.
+If I were doing the next version, I would keep the same discipline: narrow the question first, freeze contracts before seeing benchmark numbers, treat dataset audits as part of the experiment, and make every convenience change prove that it does not change the comparison. The follow-up question I would carry forward is when a narrower adapter is enough, and when broader adaptation is worth the extra size.
