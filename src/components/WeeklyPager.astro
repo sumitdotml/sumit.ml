@@ -1,0 +1,132 @@
+---
+interface WeeklyPagerItem {
+	href: string;
+	title: string;
+	dateRange?: string;
+}
+
+interface Props {
+	previousWeek?: WeeklyPagerItem;
+	nextWeek?: WeeklyPagerItem;
+}
+
+const { previousWeek, nextWeek } = Astro.props;
+---
+
+<nav class="weekly-pager" aria-label="Weekly learning navigation">
+	<div class="weekly-pager-slot previous">
+		{
+			previousWeek && (
+				<a class="weekly-pager-link" href={previousWeek.href}>
+					<span class="weekly-pager-kicker">Previous week</span>
+					<span class="weekly-pager-title">{previousWeek.title}</span>
+					{previousWeek.dateRange && (
+						<span class="weekly-pager-meta">{previousWeek.dateRange}</span>
+					)}
+				</a>
+			)
+		}
+	</div>
+	<div class="weekly-pager-slot next">
+		{
+			nextWeek && (
+				<a class="weekly-pager-link" href={nextWeek.href}>
+					<span class="weekly-pager-kicker">Next week</span>
+					<span class="weekly-pager-title">{nextWeek.title}</span>
+					{nextWeek.dateRange && (
+						<span class="weekly-pager-meta">{nextWeek.dateRange}</span>
+					)}
+				</a>
+			)
+		}
+	</div>
+</nav>
+
+<style>
+	.weekly-pager {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: 1.25em;
+		margin-top: 3em;
+		padding-top: 1.25em;
+		border-top: 1px solid rgba(var(--gray-light), 1);
+	}
+
+	.weekly-pager-slot {
+		min-width: 0;
+	}
+
+	.weekly-pager-slot.next {
+		text-align: right;
+	}
+
+	.weekly-pager-link {
+		display: block;
+		text-decoration: none;
+		color: var(--text-color);
+		min-width: 0;
+	}
+
+	.weekly-pager-link:hover {
+		text-decoration: none;
+		color: var(--accent-purple);
+	}
+
+	.weekly-pager-kicker,
+	.weekly-pager-meta {
+		display: block;
+		color: var(--text-color-muted);
+		font-size: 0.85em;
+		line-height: 1.5;
+	}
+
+	.weekly-pager-title {
+		display: block;
+		font-size: 0.95em;
+		font-weight: var(--font-weight-medium);
+		line-height: 1.45;
+		overflow-wrap: anywhere;
+	}
+
+	.weekly-pager-meta {
+		margin-top: 0.25em;
+	}
+
+	.weekly-pager-link:hover .weekly-pager-kicker,
+	.weekly-pager-link:hover .weekly-pager-meta {
+		color: var(--accent-purple);
+	}
+
+	@media (max-width: 720px) {
+		.weekly-pager {
+			gap: 1em;
+			margin-top: 2.5em;
+			padding-top: 1em;
+		}
+
+		.weekly-pager-title {
+			font-size: 0.9em;
+		}
+
+		.weekly-pager-kicker,
+		.weekly-pager-meta {
+			font-size: 0.8em;
+		}
+	}
+
+	@media (max-width: 480px) {
+		.weekly-pager {
+			gap: 0.85em;
+			margin-top: 2em;
+		}
+
+		.weekly-pager-title {
+			font-size: 0.85em;
+		}
+
+		.weekly-pager-kicker,
+		.weekly-pager-meta {
+			font-size: 0.75em;
+		}
+	}
+</style>

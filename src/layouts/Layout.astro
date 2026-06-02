@@ -16,6 +16,7 @@ interface Props {
 	updatedDate?: Date;
 	date?: Date;
 	dateLabel?: string;
+	dateDisplay?: string;
 	dateLabels?: {
 		published?: string;
 		updated?: string;
@@ -34,6 +35,7 @@ const {
 	updatedDate,
 	date,
 	dateLabel,
+	dateDisplay,
 	dateLabels,
 	image,
 	slug,
@@ -49,8 +51,8 @@ const labels = {
 const dateEntries = [
 	pubDate && { label: labels.published, value: pubDate },
 	updatedDate && { label: labels.updated, value: updatedDate },
-	!pubDate && date && { label: labels.page, value: date },
-].filter(Boolean) as Array<{ label?: string; value: Date }>;
+	!pubDate && date && { display: dateDisplay, label: labels.page, value: date },
+].filter(Boolean) as Array<{ display?: string; label?: string; value: Date }>;
 
 const pageTitle = pubDate ? title : `${title} | ${SITE_TITLE}`;
 ---
@@ -69,8 +71,14 @@ const pageTitle = pubDate ? title : `${title} | ${SITE_TITLE}`;
 					{
 						dateEntries.length > 0 && (
 							<div class="post-dates">
-								{dateEntries.map(({ label, value }, index) => (
-									<DateMeta date={value} label={label} as="div" key={index} />
+								{dateEntries.map(({ display, label, value }, index) => (
+									<DateMeta
+										date={value}
+										display={display}
+										label={label}
+										as="div"
+										key={index}
+									/>
 								))}
 								{slug && <ViewCounter slug={slug} workerUrl={workerUrl} />}
 							</div>
