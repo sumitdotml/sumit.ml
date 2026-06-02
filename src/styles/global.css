@@ -612,7 +612,6 @@ li {
 
 .katex {
 	font-size: 1em !important;
-	font-family: var(--font-family-base) !important;
 	color: var(--text-color) !important;
 }
 
@@ -629,18 +628,6 @@ li {
 	min-width: min-content;
 }
 
-.katex .mathnormal,
-.katex .mathit,
-.katex .textrm,
-.katex .text {
-	font-family: var(--font-family-base) !important;
-	font-style: normal !important;
-}
-
 .katex .arraycolsep {
 	width: 0.8em;
-}
-
-.katex .mord.text {
-	font-family: var(--font-family-base) !important;
 }
