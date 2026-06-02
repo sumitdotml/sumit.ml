@@ -1,0 +1,87 @@
+---
+description: "will be updated - currently just staying here as a placeholder"
+date: 2026-06-14
+week: 24
+dateRange: "June 8 - June 14"
+topics: ["archive", "writing"]
+draft: false
+---
+
+Right now, this is a placeholder. I will start updating here soon.
+
+## H2 text
+
+Recursive Language Models (RLMs) are a type of language model that can generate text that is self-referential.
+Recursive Language Models (RLMs) are a type of language model that can generate text that is self-referential.
+Recursive Language Models (RLMs) are a type of language model that can generate text that is self-referential.
+Recursive Language Models (RLMs) are a type of language model that can generate text that is self-referential.
+
+### H3 text
+
+AlexNet is a convolutional neural network that was used to win the ImageNet Large Scale Visual Recognition Challenge in 2012.
+
+- List item 1
+- List item 2
+- List item 3
+- List item 4
+
+### Code block example
+
+```python
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
+class AlexNet(nn.Module):
+    def __init__(self):
+        super(AlexNet, self).__init__()
+        self.conv1 = nn.Conv2d(3, 96, kernel_size=11, stride=4, padding=0)
+        self.conv2 = nn.Conv2d(96, 256, kernel_size=5, stride=1, padding=2)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.conv2(x)
+        return x
+```
+
+<details>
+	<summary>Click to expand!</summary>
+	This is a hidden block of text.
+</details>
+
+### Math block example
+
+$$
+\begin{aligned}
+\mathcal{J}_\mathrm{GRPO}(\theta)
+&= \mathbb{E}_{q \sim P(Q),\ \{o_i\}_{i=1}^{G} \sim \pi_{\theta_\mathrm{old}}(\cdot \mid q)}
+\left[
+\frac{1}{G}\sum_{i=1}^G
+\frac{1}{|o_i|}\sum_{t=1}^{|o_i|}
+\left(
+\min\left(
+\rho_{i,t}\hat{A}_{i,t},
+\operatorname{clip}(\rho_{i,t}, 1-\epsilon, 1+\epsilon)\hat{A}_{i,t}
+\right)
+- \beta D_{i,t}^{\mathrm{KL}}
+\right)
+\right], \\
+\rho_{i,t}
+&=
+\frac{\pi_\theta(o_{i,t} \mid q,o_{i,<t})}
+{\pi_{\theta_\mathrm{old}}(o_{i,t} \mid q,o_{i,<t})},
+\qquad
+\hat{A}_{i,t}
+=
+\frac{r_i - \operatorname{mean}(r_1,\ldots,r_G)}
+{\operatorname{std}(r_1,\ldots,r_G)}, \\
+D_{i,t}^{\mathrm{KL}}
+&=
+\frac{\pi_\mathrm{ref}(o_{i,t} \mid q,o_{i,<t})}
+{\pi_\theta(o_{i,t} \mid q,o_{i,<t})}
+- \log
+\frac{\pi_\mathrm{ref}(o_{i,t} \mid q,o_{i,<t})}
+{\pi_\theta(o_{i,t} \mid q,o_{i,<t})}
+- 1
+\end{aligned}
+$$

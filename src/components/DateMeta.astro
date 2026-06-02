@@ -1,22 +1,26 @@
 ---
+import { formatDateInJapan } from "../utils/dates";
+
 interface Props {
 	date: Date;
 	label?: string;
 	as?: "p" | "span" | "div";
+	display?: string;
 }
 
-const { date, label, as = "p" } = Astro.props as Props;
+const { date, label, as = "p", display } = Astro.props as Props;
 const Tag = as;
-const formatted = date.toLocaleDateString("en-US", {
+const formatted = formatDateInJapan(date, "en-US", {
 	year: "numeric",
 	month: "short",
 	day: "numeric",
 });
+const displayValue = display ?? formatted;
 ---
 
 <Tag class="date-meta">
 	{label && <span class="date-label">{label}</span>}
-	<time class="date-value" datetime={date.toISOString()}>{formatted}</time>
+	<time class="date-value" datetime={date.toISOString()}>{displayValue}</time>
 </Tag>
 
 <style>

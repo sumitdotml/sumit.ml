@@ -1,0 +1,155 @@
+---
+import { getCollection, type CollectionEntry } from "astro:content";
+import BaseHead from "../../components/BaseHead.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import { SITE_TITLE, WEEKLY_BASE_PAGE_DESCRIPTION } from "../../consts";
+import { getJapanMonthIndex, getJapanYear } from "../../utils/dates";
+import {
+	formatWeeklyMonth,
+	formatWeeklyTitle,
+	getWeeklyHref,
+} from "../../utils/weekly";
+import "../../styles/pages/weekly.css";
+
+type WeeklyEntry = CollectionEntry<"weekly">;
+
+interface MonthGroup {
+	label: string;
+	monthIndex: number;
+	entries: WeeklyEntry[];
+}
+
+interface YearGroup {
+	year: number;
+	entries: WeeklyEntry[];
+	months: MonthGroup[];
+}
+
+const weekly = (await getCollection("weekly"))
+	.filter((entry) => !entry.data.draft)
+	.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const yearMap = new Map<number, WeeklyEntry[]>();
+
+weekly.forEach((entry) => {
+	const year = getJapanYear(entry.data.date);
+	const yearEntries = yearMap.get(year) ?? [];
+	yearEntries.push(entry);
+	yearMap.set(year, yearEntries);
+});
+
+const yearGroups: YearGroup[] = Array.from(yearMap.entries())
+	.map(([year, entries]) => {
+		const monthMap = new Map<number, WeeklyEntry[]>();
+
+		entries.forEach((entry) => {
+			const monthIndex = getJapanMonthIndex(entry.data.date);
+			const monthEntries = monthMap.get(monthIndex) ?? [];
+			monthEntries.push(entry);
+			monthMap.set(monthIndex, monthEntries);
+		});
+
+		const months = Array.from(monthMap.entries())
+			.map(([monthIndex, monthEntries]) => ({
+				label: formatWeeklyMonth(monthEntries[0].data.date),
+				monthIndex,
+				entries: monthEntries.sort(
+					(a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+				),
+			}))
+			.sort((a, b) => b.monthIndex - a.monthIndex);
+
+		return {
+			year,
+			entries,
+			months,
+		};
+	})
+	.sort((a, b) => b.year - a.year);
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead
+			title={`Weekly | ${SITE_TITLE}`}
+			description={WEEKLY_BASE_PAGE_DESCRIPTION}
+		/>
+	</head>
+	<body>
+		<Header />
+		<main class="weekly-page">
+			<h1>Weekly</h1>
+			<p class="weekly-intro">
+				A running log of what I learn each week: things I studied, things I
+				built, mistakes I made, and what I want to understand next.
+			</p>
+
+			{
+				yearGroups.length > 0 ? (
+					<div class="weekly-archive">
+						{yearGroups.map((yearGroup, yearIndex) => (
+							<details class="year-group" open={yearIndex === 0}>
+								<summary class="year-summary">
+									<span class="summary-row">
+										<span class="summary-title">{yearGroup.year}</span>
+										<span class="summary-count">
+											{yearGroup.entries.length}{" "}
+											{yearGroup.entries.length === 1 ? "week" : "weeks"}
+										</span>
+									</span>
+								</summary>
+								<div class="year-content">
+									{yearGroup.months.map((monthGroup, monthIndex) => (
+										<details class="month-group" open={monthIndex === 0}>
+											<summary class="month-summary">
+												<span class="summary-row">
+													<span class="summary-title">{monthGroup.label}</span>
+													<span class="summary-count">
+														{monthGroup.entries.length}{" "}
+														{monthGroup.entries.length === 1
+															? "entry"
+															: "entries"}
+													</span>
+												</span>
+											</summary>
+											<ul class="weekly-list">
+												{monthGroup.entries.map((entry) => (
+													<li class="weekly-entry">
+														<a
+															class="weekly-entry-link"
+															href={getWeeklyHref(entry.data)}
+															aria-label={`Read ${formatWeeklyTitle(entry.data)}`}
+														>
+															<span class="weekly-entry-head">
+																<span class="weekly-entry-title">
+																	{formatWeeklyTitle(entry.data)}
+																</span>
+																{entry.data.dateRange && (
+																	<span class="weekly-entry-date">
+																		{entry.data.dateRange}
+																	</span>
+																)}
+															</span>
+															<span class="weekly-entry-detail">
+																<span>{entry.data.description}</span>
+															</span>
+														</a>
+													</li>
+												))}
+											</ul>
+										</details>
+									))}
+								</div>
+							</details>
+						))}
+					</div>
+				) : (
+					<p class="no-weekly">No weekly learnings published yet.</p>
+				)
+			}
+		</main>
+		<Footer />
+	</body>
+</html>

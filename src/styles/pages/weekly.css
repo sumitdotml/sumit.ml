@@ -1,0 +1,248 @@
+.weekly-page h1 {
+	margin-bottom: 0.4em;
+}
+
+.weekly-intro {
+	color: var(--text-color-muted);
+	font-size: 1em;
+	font-weight: var(--font-weight-light);
+	line-height: 1.6;
+	margin: 0 0 2em 0;
+}
+
+.weekly-archive {
+	margin-top: 1em;
+}
+
+.year-group {
+	border-bottom: 1px solid rgba(var(--gray-light), 1);
+	padding: 1em 0;
+}
+
+.year-group:first-child {
+	padding-top: 0;
+}
+
+.year-group:last-child {
+	border-bottom: none;
+	padding-bottom: 0;
+}
+
+.year-summary,
+.month-summary {
+	cursor: pointer;
+	color: var(--text-color);
+	list-style: none;
+}
+
+.year-summary::marker,
+.month-summary::marker {
+	content: "";
+}
+
+.year-summary::-webkit-details-marker,
+.month-summary::-webkit-details-marker {
+	display: none;
+}
+
+.summary-row {
+	display: grid;
+	grid-template-columns: 0.65em minmax(0, 1fr) max-content;
+	align-items: center;
+	column-gap: 0.55em;
+	width: 100%;
+}
+
+.summary-row::before {
+	content: "";
+	width: 0;
+	height: 0;
+	border-top: 0.32em solid transparent;
+	border-bottom: 0.32em solid transparent;
+	border-left: 0.46em solid var(--accent-purple);
+	align-self: center;
+	transform-origin: center;
+}
+
+.year-group[open] > .year-summary .summary-row::before,
+.month-group[open] > .month-summary .summary-row::before {
+	transform: rotate(90deg) translateX(0.02em);
+}
+
+.summary-title {
+	font-weight: var(--font-weight-medium);
+	line-height: 1.4;
+}
+
+.year-summary .summary-title {
+	font-size: 1.45em;
+	font-weight: var(--font-weight-semibold);
+}
+
+.month-summary .summary-title {
+	font-size: 1.25em;
+	font-weight: var(--font-weight-semibold);
+}
+
+.summary-count {
+	color: var(--text-color-muted);
+	font-size: 0.9em;
+	font-weight: var(--font-weight-regular);
+	white-space: nowrap;
+}
+
+.year-content {
+	margin: 1em 0 0 1.2em;
+}
+
+.month-group {
+	margin-bottom: 1.1em;
+}
+
+.month-group:last-child {
+	margin-bottom: 0;
+}
+
+.weekly-list {
+	list-style-type: none;
+	margin: 0.55em 0 1em 0.95em;
+	padding: 0;
+	border-left: 1px solid rgba(var(--gray-light), 1);
+}
+
+.weekly-entry {
+	margin: 0;
+	padding: 0;
+}
+
+.weekly-entry-link {
+	display: block;
+	margin-left: -1px;
+	padding: 0.58em 0 0.62em 0.9em;
+	border-left: 1px solid transparent;
+	color: var(--text-color);
+	text-decoration: none;
+}
+
+.weekly-entry-link:hover {
+	border-left-color: var(--accent-purple);
+	color: var(--accent-purple);
+	text-decoration: none;
+}
+
+.weekly-entry-link:focus-visible {
+	outline: none;
+	border-left-color: var(--accent-purple);
+	color: var(--accent-purple);
+}
+
+.weekly-entry-link:hover .weekly-entry-title,
+.weekly-entry-link:focus-visible .weekly-entry-title {
+	color: var(--accent-purple);
+}
+
+.weekly-entry-head {
+	display: flex;
+	align-items: baseline;
+	gap: 0.75em;
+	flex-wrap: wrap;
+}
+
+.weekly-entry-title {
+	font-size: 1em;
+	font-weight: var(--font-weight-regular);
+	line-height: 1.5;
+	white-space: nowrap;
+}
+
+.weekly-entry-date {
+	color: var(--text-color-muted);
+	font-size: 0.95em;
+	font-weight: var(--font-weight-light);
+	line-height: 1.5;
+	white-space: nowrap;
+}
+
+.weekly-entry-detail {
+	display: block;
+	color: var(--text-color-muted);
+	font-size: 0.95em;
+	font-weight: var(--font-weight-light);
+	line-height: 1.55;
+	margin-top: 0.12em;
+}
+
+.no-weekly {
+	color: var(--text-color-muted);
+	font-style: italic;
+}
+
+@media (max-width: 720px) {
+	.weekly-intro {
+		margin-bottom: 1.75em;
+	}
+
+	.year-group {
+		padding: 0.85em 0;
+	}
+
+	.year-content {
+		margin-top: 0.85em;
+		margin-left: 1em;
+	}
+
+	.year-summary .summary-title {
+		font-size: 1.34em;
+	}
+
+	.month-summary .summary-title {
+		font-size: 1.18em;
+	}
+
+	.summary-count {
+		font-size: 0.88em;
+	}
+
+	.weekly-list {
+		margin-left: 0.9em;
+	}
+
+	.weekly-entry-link {
+		padding: 0.52em 0 0.56em 0.85em;
+	}
+}
+
+@media (max-width: 480px) {
+	.weekly-intro {
+		margin-bottom: 1.5em;
+	}
+
+	.summary-row {
+		gap: 0.75em;
+		grid-template-columns: 0.62em minmax(0, 1fr) max-content;
+	}
+
+	.year-content {
+		margin-left: 0.8em;
+	}
+
+	.year-summary .summary-title {
+		font-size: 1.26em;
+	}
+
+	.month-summary .summary-title {
+		font-size: 1.14em;
+	}
+
+	.summary-count {
+		font-size: 0.86em;
+	}
+
+	.weekly-list {
+		margin-left: 0.75em;
+	}
+
+	.weekly-entry-link {
+		padding: 0.5em 0 0.54em 0.8em;
+	}
+}

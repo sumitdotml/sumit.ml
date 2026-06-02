@@ -75,4 +75,18 @@ const research = defineCollection({
 		}),
 });
 
-export const collections = { blog, pages, research };
+const weekly = defineCollection({
+	loader: glob({ base: "./src/content/weekly", pattern: "**/*.{md,mdx}" }),
+	schema: ({ image }) =>
+		z.object({
+			description: z.string(),
+			date: z.coerce.date(),
+			week: z.number().int().min(1).max(53),
+			dateRange: z.string().optional(),
+			topics: z.array(z.string()).optional().default([]),
+			image: image().optional(),
+			draft: z.boolean().optional().default(false),
+		}),
+});
+
+export const collections = { blog, pages, research, weekly };

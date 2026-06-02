@@ -6,6 +6,7 @@ import ThemeToggle from "../components/ThemeToggle.astro";
 import ThemeInit from "../components/scripts/ThemeInit.astro";
 import ViewCounter from "../components/ViewCounter.astro";
 import FallbackImage from "../assets/placeholder-1.png";
+import { formatDateInJapan } from "../utils/dates";
 
 interface Author {
 	name: string;
@@ -74,7 +75,7 @@ const metaDescription =
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
 const formatDate = (d: Date): string =>
-	d.toLocaleDateString("en-GB", {
+	formatDateInJapan(d, "en-GB", {
 		day: "numeric",
 		month: "short",
 		year: "numeric",

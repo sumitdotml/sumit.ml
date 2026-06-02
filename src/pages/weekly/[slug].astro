@@ -1,0 +1,68 @@
+---
+import { getCollection, render, type CollectionEntry } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+import WeeklyPager from "../../components/WeeklyPager.astro";
+import {
+	formatWeeklyTitle,
+	getWeeklyHref,
+	getWeeklySlug,
+} from "../../utils/weekly";
+import { getJapanYear } from "../../utils/dates";
+
+type WeeklyEntry = CollectionEntry<"weekly">;
+
+interface WeeklyPagerItem {
+	href: string;
+	title: string;
+	dateRange?: string;
+}
+
+export async function getStaticPaths() {
+	const weekly = (await getCollection("weekly"))
+		.filter((entry) => !entry.data.draft)
+		.sort((a, b) => a.data.date.valueOf() - b.data.date.valueOf());
+
+	const toPagerItem = (entry: WeeklyEntry): WeeklyPagerItem => ({
+		href: getWeeklyHref(entry.data),
+		title: formatWeeklyTitle(entry.data),
+		dateRange: entry.data.dateRange,
+	});
+
+	return weekly.map((entry, index) => ({
+		params: { slug: getWeeklySlug(entry.data) },
+		props: {
+			entry,
+			previousWeek: weekly[index - 1]
+				? toPagerItem(weekly[index - 1])
+				: undefined,
+			nextWeek: weekly[index + 1] ? toPagerItem(weekly[index + 1]) : undefined,
+		},
+	}));
+}
+
+interface Props {
+	entry: WeeklyEntry;
+	previousWeek?: WeeklyPagerItem;
+	nextWeek?: WeeklyPagerItem;
+}
+
+const { entry, previousWeek, nextWeek } = Astro.props;
+const { Content } = await render(entry);
+const title = formatWeeklyTitle(entry.data);
+const weeklyDateDisplay = entry.data.dateRange
+	? `${entry.data.dateRange}, ${getJapanYear(entry.data.date)}`
+	: undefined;
+---
+
+<Layout
+	title={title}
+	description={entry.data.description}
+	breadcrumbTitle={title}
+	date={entry.data.date}
+	dateDisplay={weeklyDateDisplay}
+	dateLabels={{ page: "" }}
+	image={entry.data.image}
+>
+	<Content />
+	<WeeklyPager previousWeek={previousWeek} nextWeek={nextWeek} />
+</Layout>
