@@ -1,5 +1,6 @@
 ---
-import { HOME_ICON, findNavLabel } from "../data/navigation";
+import BrandIcon from "./BrandIcon.astro";
+import { findNavLabel } from "../data/navigation";
 
 interface Props {
 	customTitle?: string;
@@ -11,7 +12,7 @@ const pathSegments = pathname.split("/").filter((segment) => segment !== "");
 
 const breadcrumbs = [
 	{
-		label: HOME_ICON,
+		label: "Home",
 		href: "/",
 		isActive: pathname === "" || pathname === "/",
 		isHome: true,
@@ -49,7 +50,7 @@ pathSegments.forEach((segment, index) => {
 					]}
 					aria-current={crumb.isActive ? "page" : undefined}
 				>
-					{crumb.label}
+					{crumb.isHome ? <BrandIcon alt="Home" /> : crumb.label}
 				</a>
 			</>
 		))
@@ -59,20 +60,33 @@ pathSegments.forEach((segment, index) => {
 <style>
 	.breadcrumbs {
 		display: flex;
-		align-items: baseline;
+		align-items: center;
 		gap: 0.5em;
-		font-size: 0.9em;
-		flex-wrap: wrap;
+		flex: 1;
+		flex-wrap: nowrap;
+		min-width: 0;
+		line-height: var(--nav-text-line-height);
 	}
 
 	.separator {
+		display: inline-flex;
+		align-items: center;
+		line-height: var(--nav-text-line-height);
 		color: var(--text-color);
+		flex: 0 0 auto;
 		opacity: 0.4;
 		font-weight: var(--font-weight-light);
 	}
 
 	.breadcrumb-link {
+		display: block;
+		flex: 0 0 auto;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
 		text-decoration: none;
+		white-space: nowrap;
+		line-height: var(--nav-text-line-height);
 		color: var(--text-color);
 		opacity: 0.5;
 		font-weight: var(--font-weight-regular);
@@ -87,6 +101,7 @@ pathSegments.forEach((segment, index) => {
 	}
 
 	.breadcrumb-link.active {
+		flex: 1 1 auto;
 		opacity: 1;
 		color: var(--text-color);
 		font-weight: var(--font-weight-medium);
@@ -94,11 +109,12 @@ pathSegments.forEach((segment, index) => {
 	}
 
 	.breadcrumb-link.home {
-		font-size: 1.3em;
-		line-height: 1;
-		opacity: 1;
 		display: inline-flex;
 		align-items: center;
+		flex: 0 0 auto;
+		line-height: 1;
+		overflow: visible;
+		opacity: 1;
 	}
 
 	.breadcrumb-link.home:hover {
@@ -107,7 +123,6 @@ pathSegments.forEach((segment, index) => {
 
 	@media (max-width: 360px) {
 		.breadcrumbs {
-			font-size: 0.85em;
 			gap: 0.4em;
 		}
 	}
