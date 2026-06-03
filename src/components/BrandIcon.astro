@@ -1,0 +1,31 @@
+---
+import { Image } from "astro:assets";
+import brandIcon from "../assets/brand-icon.png";
+
+interface Props {
+	alt?: string;
+	/** CSS length for the rendered icon; defaults to the nav icon size. */
+	size?: string;
+}
+
+// alt defaults to "" (decorative) since the brand link is labelled by its text.
+const { alt = "", size = "1.75em" } = Astro.props;
+---
+
+<Image
+	src={brandIcon}
+	alt={alt}
+	width={48}
+	densities={[1, 2]}
+	loading="eager"
+	class="brand-icon-img"
+	style={`--brand-icon-size: ${size}`}
+/>
+
+<style>
+	.brand-icon-img {
+		display: block;
+		width: var(--brand-icon-size);
+		height: var(--brand-icon-size);
+	}
+</style>

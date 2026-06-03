@@ -7,9 +7,6 @@ import Footnotes from "../components/footnotes/Footnotes.astro";
 import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
 import HR from "../components/HR.astro";
 import Link from "../components/Link.astro";
-import { Image } from "astro:assets";
-
-import homepageHero from "../assets/homepage-hero.png";
 
 const footnotes = [
 	{
@@ -30,16 +27,8 @@ const footnotes = [
 		<main>
 			<h1 class="hero-title">Hi, I'm Sumit</h1>
 			<p>Tokyo-based MLE, aspiring ML Researcher</p>
-			<Image
-				src={homepageHero}
-				alt="Homepage Hero"
-				priority
-				loading="eager"
-				width={170}
-				class="hero-image"
-			/>
 
-			<h3>Preface</h3>
+			<h2>Preface</h2>
 			<p>
 				Thanks for checking in! I go into some ramblings and random tangents
 				about myself <Link href="/about" fontWeight="semibold">here</Link>, so
@@ -52,7 +41,7 @@ const footnotes = [
 				/>.
 			</p>
 
-			<h3>Lately...</h3>
+			<h2>Lately...</h2>
 			<p>These days, I've been primarily busy with:</p>
 			<ul>
 				<li>
@@ -73,7 +62,7 @@ const footnotes = [
 				</li>
 			</ul>
 
-			<h3>Looking for Mentorship</h3>
+			<h2>Looking for Mentorship</h2>
 			<p>
 				I'm currently a solo researcher, and I believe that mentorship in ML
 				research could be mutually valuable! I'm particularly interested in LLM
@@ -112,7 +101,7 @@ const footnotes = [
 				</Link>
 				work best for me; I'll get back to you as soon as I can.
 			</p>
-			<h3>Hmm... what else?</h3>
+			<h2>Hmm... what else?</h2>
 			<p>
 				You can also check out my <Link href="/blog" fontWeight="medium"
 					>blog</Link

@@ -9,16 +9,20 @@ import { Sun, Moon } from "lucide-astro";
 
 <style>
 	button {
+		font: inherit;
 		background: none;
 		border: none;
 		cursor: pointer;
-		padding: 0.55em;
+		padding: 0;
 		color: var(--text-color);
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		position: relative;
 		transition: color 0.2s ease;
 		margin: 0;
+		width: 2.2em;
+		height: 2.2em;
 	}
 
 	button:hover {
@@ -26,13 +30,16 @@ import { Sun, Moon } from "lucide-astro";
 	}
 
 	.icon {
-		width: 22px;
-		height: 22px;
+		width: 1.375em;
+		height: 1.375em;
 	}
 
 	.sun-icon,
 	.moon-icon {
 		position: absolute;
+		left: 50%;
+		top: 50%;
+		transform: translate(-50%, -50%);
 	}
 
 	/* Light mode: show moon, hide sun */
@@ -43,36 +50,6 @@ import { Sun, Moon } from "lucide-astro";
 	/* Dark mode: show sun, hide moon */
 	:global([data-theme="dark"]) .moon-icon {
 		display: none;
-	}
-
-	@media (max-width: 720px) {
-		button {
-			padding: 0.5em;
-		}
-		.icon {
-			width: 21px;
-			height: 21px;
-		}
-	}
-
-	@media (max-width: 480px) {
-		button {
-			padding: 0.3em;
-		}
-		.icon {
-			width: 18px;
-			height: 18px;
-		}
-	}
-
-	@media (max-width: 360px) {
-		button {
-			padding: 0.25em;
-		}
-		.icon {
-			width: 16px;
-			height: 16px;
-		}
 	}
 </style>
 

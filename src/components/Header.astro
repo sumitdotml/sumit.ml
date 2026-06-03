@@ -1,8 +1,10 @@
 ---
+import { ChevronDown } from "lucide-astro";
+import BrandIcon from "./BrandIcon.astro";
 import HeaderLink from "./HeaderLink.astro";
 import ThemeToggle from "./ThemeToggle.astro";
 import Breadcrumbs from "./Breadcrumbs.astro";
-import { HOME_ICON, NAV_LINKS } from "../data/navigation";
+import { NAV_LINKS } from "../data/navigation";
 
 interface Props {
 	breadcrumbTitle?: string;
@@ -14,37 +16,37 @@ const isHomePage = pathname === "" || pathname === "/";
 ---
 
 <header data-site-header>
-	<nav>
-		<div
-			class:list={[
-				"logo",
-				{ "hide-on-mobile": !isHomePage, "hide-on-homepage": isHomePage },
-			]}
-		>
-			<a href="/">{HOME_ICON}</a>
-		</div>
-		<div
-			class:list={[
-				"nav-links",
-				{ "show-on-mobile": isHomePage, "nav-links-homepage": isHomePage },
-			]}
-		>
-			{
-				NAV_LINKS.map((link) => (
-					<HeaderLink href={link.href}>{link.label}</HeaderLink>
-				))
-			}
-			<ThemeToggle />
-		</div>
-		{
-			!isHomePage && (
-				<div class="nav-mobile">
-					<Breadcrumbs customTitle={breadcrumbTitle} />
-					<ThemeToggle />
+	{
+		isHomePage ? (
+			<nav class="site-nav home-nav" aria-label="Primary navigation">
+				<div class="brand-group">
+					<a class="brand" href="/" aria-label="sumit.ml home">
+						<BrandIcon />
+					</a>
+					<button
+						type="button"
+						class="menu-toggle"
+						aria-expanded="false"
+						aria-controls="home-menu"
+					>
+						<span class="brand-text">sumit.ml</span>
+						<ChevronDown class="chevron" size={18} />
+					</button>
 				</div>
-			)
-		}
-	</nav>
+				<div class="home-links" id="home-menu">
+					{NAV_LINKS.map((link) => (
+						<HeaderLink href={link.href}>{link.label}</HeaderLink>
+					))}
+				</div>
+				<ThemeToggle />
+			</nav>
+		) : (
+			<div class="site-nav breadcrumb-nav">
+				<Breadcrumbs customTitle={breadcrumbTitle} />
+				<ThemeToggle />
+			</div>
+		)
+	}
 </header>
 <style>
 	header {
@@ -66,63 +68,82 @@ const isHomePage = pathname === "" || pathname === "/";
 		-webkit-backdrop-filter: blur(var(--header-backdrop-blur));
 	}
 
-	nav {
+	.site-nav {
+		--nav-text-line-height: 1.5;
+
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		max-width: 800px;
 		margin: 0 auto;
 		padding: 1.5em 0 1em;
+		gap: 1.5em;
+		line-height: var(--nav-text-line-height);
 	}
 
-	.logo a {
-		font-size: 1.75em;
+	.brand {
+		display: inline-flex;
+		align-items: center;
 		text-decoration: none;
 		line-height: 1;
 	}
 
-	.nav-links {
+	.brand-text {
+		font-weight: var(--font-weight-medium);
+	}
+
+	.brand-group {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.55em;
+	}
+
+	.menu-toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3em;
+		background: none;
+		border: none;
+		margin: 0;
+		padding: 0;
+		cursor: pointer;
+		color: var(--text-color);
+		font: inherit;
+		line-height: 1;
+		transition: color 0.2s ease;
+	}
+
+	.menu-toggle:hover {
+		color: var(--accent-purple);
+	}
+
+	/* chevron only appears on mobile screens */
+	.chevron {
+		display: none;
+		transition: transform 0.2s ease;
+	}
+
+	.home-links {
 		display: flex;
 		gap: 2em;
-		font-size: 0.95em;
 		align-items: center;
-	}
-
-	.nav-mobile {
-		display: none;
-	}
-
-	.hide-on-mobile {
-		display: block;
-	}
-
-	.show-on-mobile {
-		display: flex;
-	}
-
-	.hide-on-homepage {
-		display: none;
-	}
-
-	.nav-links-homepage {
 		margin-left: auto;
 	}
 
+	.breadcrumb-nav {
+		gap: 1.5em;
+	}
+
 	@media (max-width: 720px) {
-		nav {
+		.site-nav {
 			padding-left: 0em;
 			padding-right: 0.6em;
 			padding-top: 1.15em;
 			padding-bottom: 0.9em;
 		}
 
-		.logo a {
-			font-size: 1.6em;
-		}
-
-		.nav-links {
+		.home-links {
 			gap: 1.75em;
-			font-size: 0.95em;
 		}
 	}
 
@@ -131,43 +152,126 @@ const isHomePage = pathname === "" || pathname === "/";
 			padding: 0 1em;
 		}
 
-		nav {
+		.site-nav {
 			padding-left: 0em;
 			padding-right: 0.4em;
 			padding-top: 1.25em;
 			padding-bottom: 1.05em;
 		}
 
-		.logo a {
-			font-size: 1.75em;
+		.home-nav {
+			position: relative;
 		}
 
-		.hide-on-mobile {
-			display: none;
+		/* to increase the tap target size without shifting the layout */
+		.menu-toggle {
+			padding: 0.4em 0.5em;
+			margin: -0.4em -0.5em;
 		}
 
-		.nav-links:not(.show-on-mobile) {
-			display: none;
+		.chevron {
+			display: block;
 		}
 
-		.nav-mobile {
-			display: flex;
-			gap: 1.5em;
-			align-items: center;
-			flex: 1;
-			justify-content: space-between;
-			padding-left: 0.4em;
-			padding-right: 0.4em;
+		.home-nav[data-menu-open] .chevron {
+			transform: rotate(180deg);
+		}
+
+		.home-links {
+			position: absolute;
+			top: calc(100% - 0.5em);
+			left: 0;
+			flex-direction: column;
+			align-items: stretch;
+			gap: 0.1em;
+			margin: 0;
+			min-width: 11em;
+			padding: 0.4em;
+			background: var(--bg-color);
+			border: 1px solid rgba(128, 128, 128, 0.18);
+			border-radius: 0.55em;
+			box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+			opacity: 0;
+			visibility: hidden;
+			transform: translateY(-6px);
+			transition:
+				opacity 0.18s ease,
+				transform 0.18s ease,
+				visibility 0.18s ease;
+			z-index: 30;
+		}
+
+		.home-nav[data-menu-open] .home-links {
+			opacity: 1;
+			visibility: visible;
+			transform: translateY(0);
+		}
+
+		.home-links :global(a) {
+			position: relative;
+			display: block;
+			padding: 0.45em 0.8em 0.45em 1.6em;
+			border-radius: 0.4em;
+			line-height: 1.3;
+			color: var(--text-color);
+			opacity: 0;
+			transform: translateY(-4px);
+			transition:
+				opacity 0.2s ease,
+				transform 0.2s ease,
+				color 0.15s ease,
+				background-color 0.15s ease;
+		}
+
+		.home-links :global(a)::before {
+			content: "›";
+			position: absolute;
+			left: 0.75em;
+			color: var(--text-color-muted);
+			transition: color 0.15s ease;
+		}
+
+		.home-links :global(a:hover) {
+			color: var(--accent-purple);
+			background-color: rgba(128, 128, 128, 0.1);
+		}
+
+		.home-links :global(a:hover)::before {
+			color: var(--accent-purple);
+		}
+
+		.home-nav[data-menu-open] .home-links :global(a) {
+			opacity: 1;
+			transform: translateY(0);
+		}
+
+		.home-nav[data-menu-open] .home-links :global(a:nth-child(1)) {
+			transition-delay: 0.03s, 0.03s, 0s, 0s;
+		}
+
+		.home-nav[data-menu-open] .home-links :global(a:nth-child(2)) {
+			transition-delay: 0.07s, 0.07s, 0s, 0s;
+		}
+
+		.home-nav[data-menu-open] .home-links :global(a:nth-child(3)) {
+			transition-delay: 0.11s, 0.11s, 0s, 0s;
+		}
+
+		.home-nav[data-menu-open] .home-links :global(a:nth-child(4)) {
+			transition-delay: 0.15s, 0.15s, 0s, 0s;
+		}
+
+		.breadcrumb-nav {
+			gap: 1em;
 		}
 	}
 
-	@media (max-width: 360px) {
-		.logo a {
-			font-size: 1.55em;
-		}
-
-		.nav-mobile {
-			gap: 1.2em;
+	@media (prefers-reduced-motion: reduce) {
+		.chevron,
+		.home-links,
+		.home-links :global(a) {
+			transition: none;
+			transform: none;
 		}
 	}
 </style>
@@ -186,4 +290,42 @@ const isHomePage = pathname === "" || pathname === "/";
 		toggleScrolled();
 		window.addEventListener("scroll", toggleScrolled, { passive: true });
 	}
+
+	const menuToggles =
+		document.querySelectorAll<HTMLButtonElement>(".menu-toggle");
+
+	menuToggles.forEach((toggle) => {
+		const nav = toggle.closest<HTMLElement>(".home-nav");
+		if (!nav) return;
+
+		const setMenuOpen = (open: boolean) => {
+			nav.toggleAttribute("data-menu-open", open);
+			toggle.setAttribute("aria-expanded", String(open));
+		};
+
+		toggle.addEventListener("click", (event) => {
+			event.stopPropagation();
+			setMenuOpen(!nav.hasAttribute("data-menu-open"));
+		});
+
+		nav.querySelectorAll(".home-links a").forEach((link) => {
+			link.addEventListener("click", () => setMenuOpen(false));
+		});
+
+		document.addEventListener("click", (event) => {
+			if (
+				nav.hasAttribute("data-menu-open") &&
+				!nav.contains(event.target as Node)
+			) {
+				setMenuOpen(false);
+			}
+		});
+
+		document.addEventListener("keydown", (event) => {
+			if (event.key === "Escape" && nav.hasAttribute("data-menu-open")) {
+				setMenuOpen(false);
+				toggle.focus();
+			}
+		});
+	});
 </script>

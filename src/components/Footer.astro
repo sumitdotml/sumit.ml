@@ -1,5 +1,6 @@
 ---
 import { Mail, Github, Twitter, Rss } from "lucide-astro";
+import BrandIcon from "./BrandIcon.astro";
 import { SOCIAL_LINKS } from "../data/social";
 import { formatVersionDate } from "../utils/dates";
 
@@ -10,12 +11,12 @@ const ICONS = {
 	rss: Rss,
 } as const;
 
-const versionStamp = `👾 sumit.ml v${formatVersionDate(new Date())}`;
+const versionStamp = `sumit.ml v${formatVersionDate(new Date())}`;
 ---
 
 <footer>
 	<div class="footer-content">
-		<p class="copyright">{versionStamp}</p>
+		<p class="copyright"><BrandIcon alt="" size="1.5em" />{versionStamp}</p>
 		<div class="social-links">
 			{
 				SOCIAL_LINKS.map((link) => {
@@ -60,6 +61,9 @@ const versionStamp = `👾 sumit.ml v${formatVersionDate(new Date())}`;
 	.copyright {
 		margin: 0;
 		font-size: 0.85em;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4em;
 	}
 
 	.social-links {
