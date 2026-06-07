@@ -23,12 +23,12 @@ import Footnotes from "../components/footnotes/Footnotes.astro";
 const footnotes = [
 	{
 		id: "1",
-		content: "sample footnote 1"
+		content: "sample footnote 1",
 	},
 	{
 		id: "2",
-		content: "sample footnote 2"
-	}
+		content: "sample footnote 2",
+	},
 ];
 ---
 ```
@@ -37,7 +37,9 @@ const footnotes = [
 
 ```astro
 <p>
-	Some text that needs a footnote.<FootnoteRef id="1" /> More text with another footnote.<FootnoteRef id="2" /> Text without a footnote.
+	Some text that needs a footnote.<FootnoteRef id="1" /> More text with another footnote.<FootnoteRef
+		id="2"
+	/> Text without a footnote.
 </p>
 
 <!-- At the end of the content, render all footnotes -->
@@ -65,27 +67,28 @@ Some text that needs a footnote.<a href="#footnote-1" class="footnote-ref">[1]</
 ### Option 2: MDX
 
 1. Install MDX support:
+
 ```bash
 npm install @astrojs/mdx
 ```
 
-2. Update `astro.config.mjs`:
-```js
-import mdx from '@astrojs/mdx';
+2. Update `astro.config.ts`:
+
+```ts
+import mdx from "@astrojs/mdx";
 
 export default defineConfig({
-  integrations: [mdx()],
+	integrations: [mdx()],
 });
 ```
 
 3. Use components directly in `.mdx` files:
+
 ```mdx
 import FootnoteRef from "../components/footnotes/FootnoteRef.astro";
 import Footnotes from "../components/footnotes/Footnotes.astro";
 
-export const footnotes = [
-  { id: "1", content: "sample footnote 1" }
-];
+export const footnotes = [{ id: "1", content: "sample footnote 1" }];
 
 Some text with a footnote.<FootnoteRef id="1" />
 
