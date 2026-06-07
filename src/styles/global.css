@@ -353,6 +353,8 @@ hr {
 ul,
 ol {
 	margin-bottom: 1em;
+	padding-left: 1.25em;
+	list-style-position: outside;
 }
 
 li {
@@ -555,6 +557,10 @@ li {
 	}
 	.katex .arraycolsep {
 		width: 0.5em;
+	}
+	ul,
+	ol {
+		padding-left: 1.1em;
 	}
 }
 

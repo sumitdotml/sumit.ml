@@ -92,7 +92,7 @@
 }
 
 .year-content {
-	margin: 1em 0 0 1.2em;
+	margin: 1em 0 0 0.7em;
 }
 
 .month-group {
@@ -105,7 +105,7 @@
 
 .weekly-list {
 	list-style-type: none;
-	margin: 0.55em 0 1em 0.95em;
+	margin: 0.55em 0 1em 0.65em;
 	padding: 0;
 	border-left: 1px solid rgba(var(--gray-light), 1);
 }
@@ -188,7 +188,7 @@
 
 	.year-content {
 		margin-top: 0.85em;
-		margin-left: 1em;
+		margin-left: 0.6em;
 	}
 
 	.year-summary .summary-title {
@@ -204,7 +204,7 @@
 	}
 
 	.weekly-list {
-		margin-left: 0.9em;
+		margin-left: 0.55em;
 	}
 
 	.weekly-entry-link {
@@ -223,7 +223,7 @@
 	}
 
 	.year-content {
-		margin-left: 0.8em;
+		margin-left: 0.45em;
 	}
 
 	.year-summary .summary-title {
@@ -239,7 +239,7 @@
 	}
 
 	.weekly-list {
-		margin-left: 0.75em;
+		margin-left: 0.45em;
 	}
 
 	.weekly-entry-link {
