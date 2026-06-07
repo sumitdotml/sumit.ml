@@ -83,7 +83,6 @@ const weekly = defineCollection({
 			date: z.coerce.date(),
 			week: z.number().int().min(1).max(53),
 			dateRange: z.string().optional(),
-			topics: z.array(z.string()).optional().default([]),
 			image: image().optional(),
 			draft: z.boolean().optional().default(false),
 		}),
