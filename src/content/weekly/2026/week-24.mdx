@@ -1,0 +1,127 @@
+---
+description: "C memory and matrices"
+date: 2026-06-14
+week: 24
+dateRange: "June 8 - June 14"
+draft: false
+image: "../../../assets/weekly/2026/w24/w24.png"
+---
+
+This was mostly a week of getting my C base in order before going back to CUDA. I think I'll spend 
+a few more weeks on this, but no more than 3. I want the foundations to be boringly solid before I 
+continue with PMPP.
+
+## This Week: Memory, Pointers, Structs, Flat Arrays
+
+### Indexing
+
+The line that kept showing up was:
+
+```c
+data[row * cols + col]
+```
+
+This is just a tiny indexing formula, but I believe this is the thing I need to become fluent with 
+before tensors and CUDA feel natural. Remember seeing something similar for calculating the global 
+index of threads in the PMPP book too.
+
+A matrix here is just a flat chunk of `float`s with shape metadata. If the matrix has `rows = 2` 
+and `cols = 3`, then the value at row `1`, column `2` lives at:
+
+```c
+data[1 * 3 + 2]
+```
+
+Quite a straightforward thing, but I believe it touches almost everything I need later: memory 
+layout, bounds checks, ownership, and cache behavior.
+
+### The pointer stuff
+
+I started from the very basics: what a pointer stores, what the pointed-to value is, 
+and who is responsible for freeing heap memory. I still need reps here, but my mental model is 
+much less foggy now:
+
+```c
+float *data = malloc(rows * cols * sizeof *data);
+free(data);
+```
+
+### Struct
+
+If a helper receives a pointer to the struct, I can't write `matrix.data`; I need to follow the 
+pointer first:
+
+```c
+matrix->data
+matrix->rows
+matrix->cols
+```
+
+That also made some helper functions that I wrote feel more natural. In the exercises I did, 
+`index_of` was the small row-major helper, `matrix_init` owned allocation, `matrix_free` owned 
+cleanup, and the accessors kept the bounds checks in one place:
+
+```c
+static size_t index_of(size_t row, size_t col, const struct Matrix *matrix) {
+  return row * matrix->cols + col;
+}
+```
+
+### Include guard
+
+The header file split was another useful concept that I knew of already, but learning the 
+declaration/definition boundary and why the header gets wrapped was good.
+
+```c
+#ifndef MATRIX_H
+#define MATRIX_H
+
+// declarations
+
+#endif
+```
+
+### Naive matmul
+
+Matrix multiplication was the first exercise that made the dimensions matter in a non-trivial way:
+
+```text
+(2 x 3) @ (3 x 4) -> (2 x 4)
+             ^
+          shared k
+```
+
+The function should not secretly allocate the result. The caller creates the output with the 
+right shape, and the function either fills it or rejects the call.
+
+
+### Naive transpose
+
+The transpose work I'm doing is still very vanilla, but the core idea has been:
+
+```text
+out[col, row] = matrix[row, col]
+```
+
+And I kept using the stricter build setup from last week:
+
+```zsh
+cc -std=c11 -Wall -Wextra -Werror -g -O1 -fsanitize=address,undefined -fno-omit-frame-pointer ...
+```
+
+---
+
+## Next Week
+
+- Start thinking about row-major access patterns and cache locality.
+- Slowly move from small matrix helpers toward a tiny CPU tensor library.
+- Hoping to also read at least two model release technical reports: Arcee Trinity + one more
+
+---
+
+_Basically, plan is to be done with my C practice with the aim of creating at least some form of a 
+working tiny CPU Tensor library. Of course, I don't need to be ensuring that I do it perfectly - 
+that will come eventually as I resume the PMPP book after these next (hopefully) 2 weeks of C 
+munching. Current thought process is that this book will guide me to also gradually write the 
+CUDA backend for the existing library modules and eventually just help me nurture this library 
+into a proper C/CUDA Tensor library._
