@@ -1,0 +1,83 @@
+---
+description: "CPU tensor cores, Arcee blog posts"
+date: 2026-06-21
+week: 25
+dateRange: "June 15 - June 21"
+draft: false
+image: "../../../assets/weekly/2026/w25/w25.png"
+---
+
+This week, I moved from hand-written matrix exercises into a tiny tensor runtime. This is now
+a [tensor library-ish](https://github.com/sumitdotml/tinytensor): still CPU-only and `float32`
+only, but that kinda was the point for now as I wanted to get comfortable with allocation, shape
+metadata, strides, indexing, and correctness before adding CUDA. Also did some mild skimming of
+[Arcee's blog posts](https://www.arcee.ai/blog).
+
+## CPU Tensor Basics
+
+The [tensor](https://github.com/sumitdotml/tinytensor/blob/main/src/tensor.c) in my library now 
+carries the pieces I wanted to make explicit:
+
+```c
+float *data;
+size_t ndim;
+size_t shape[TT_TENSOR_MAX_DIMS];
+size_t strides[TT_TENSOR_MAX_DIMS];
+size_t numel;
+```
+
+The stride idea materialized more inside my head this week, and I feel great about this.
+
+For instance, for a tensor shaped `[2, 3, 4]`, the row-major strides are `[12, 4, 1]`, so one
+position becomes:
+
+```text
+[1, 2, 3] -> 1 * 12 + 2 * 4 + 3 * 1 = 23
+```
+
+I also added the first CPU helpers around this:
+
+- flat and multidimensional get/set
+- `add` / `mul`
+- `sum` / `max` / `mean`
+- 2D `matmul`
+
+Kept the matmul is intentionally plain for now:
+
+```text
+[m, k] @ [k, n] -> [m, n]
+```
+
+Basically no batching or broadcasting yet; will continue to work on these steadily from here.
+With that being said, my primary objective with this was to simply get more used to writing C so
+that I could mitigate the friction to some aspect while reading the PMPP book, so this has already
+served pretty well. As I make more progressions with the book, I will start adding CUDA kernels in
+this repo in addition to doing more advanced CPU ops.
+
+---
+
+## On Technical Paper Reads
+
+Got pretty darn engrossed in C again this week, not too proud of this. However, I did manage to
+read a couple of Arcee's technical writings:
+
+- [Arcee 4.5B deepdive](https://www.arcee.ai/blog/deep-dive-afm-4-5b-the-first-arcee-foundational-model)
+- [Extending AFM-4.5B to 64k context length](https://www.arcee.ai/blog/extending-afm-4-5b-to-64k-context-length) (this is reaaaaaally interesting) and
+- [The Trinity Manifesto](https://www.arcee.ai/blog/the-trinity-manifesto)
+
+The blog progression of the good people at Arcee is pretty interesting in that it starts off with
+the enterprise-focused model fine-tuning techniques and then slowly transitions towards building
+their own foundation models by firstly experimenting in a smaller scale with SLMs and then
+progressing into the larger ones with the Trinity family.
+
+Gives me a super nice chronological progression of how Arcee did things, and this study will
+provide me lots of valuable knowledge imo.
+
+---
+
+## Next Week
+
+- start full-tensor softmax in C.
+- resume the PMPP book, ideally complete chapter 3 (might be tough, but effort shall be made)
+- Arcee blogs + if time is kinder, complete 2-3 passes for the Trinity Large technical report
+- some personal commitments (career-related)
