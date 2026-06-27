@@ -1,0 +1,1061 @@
+---
+// standalone keybind reference (not in nav, excluded from sitemap), built from github.com/sumitdotml/dotfiles
+import "../styles/tokens.css";
+import ThemeInit from "../components/scripts/ThemeInit.astro";
+import ThemeToggle from "../components/ThemeToggle.astro";
+
+type Row = { s: string[]; d: string; j?: string; wide?: boolean };
+type Group = { name: string; note?: string; caption?: string; rows: Row[] };
+type Section = { id: string; tool: string; note: string; groups: Group[] };
+
+const sections: Section[] = [
+	{
+		id: "aerospace",
+		tool: "AeroSpace",
+		note: "i3-like tiling WM · modifier: Alt",
+		groups: [
+			{
+				name: "main mode",
+				rows: [
+					{ s: ["Alt+Enter"], d: "Open / focus Ghostty" },
+					{ s: ["Alt+H J K L"], d: "Focus  ←  ↓  ↑  →  (skips floats)" },
+					{ s: ["Alt+Shift+H J K L"], d: "Move window  ←  ↓  ↑  →" },
+					{ s: ["Alt+-", "Alt+="], j: "/", d: "Shrink / grow window" },
+					{ s: ["Alt+F"], d: "Maximize / restore (fullscreen)" },
+					{ s: ["Alt+1 2 3 4 5"], d: "Switch to workspace 1–5" },
+					{ s: ["Alt+Shift+1 2 3 4 5"], d: "Move window to workspace" },
+					{ s: ["Alt+Tab"], d: "Previous workspace (back-and-forth)" },
+					{ s: ["Alt+Shift+Tab"], d: "Focus other monitor" },
+					{ s: ["Alt+Ctrl+Shift+Tab"], d: "Send window to other monitor" },
+					{ s: ["Alt+Shift+Space"], d: "Toggle floating / tiling" },
+					{ s: ["Alt+Shift+C"], d: "Reload config" },
+					{ s: ["Alt+Shift+;"], d: "Enter service mode" },
+				],
+			},
+			{
+				name: "tiling & layout",
+				rows: [
+					{ s: ["Alt+/"], d: "Columns: split side by side" },
+					{ s: ["Alt+\\"], d: "Rows: split stacked" },
+					{ s: ["Alt+,"], d: "Accordion layout" },
+					{
+						s: ["Alt+Ctrl+H J K L"],
+						d: "Group window + neighbor (auto-balance)",
+					},
+					{ s: ["Alt+B"], d: "Balance sizes (even out)" },
+					{ s: ["Alt+Shift+R"], d: "Flatten workspace to even row" },
+				],
+			},
+			{
+				name: "service mode",
+				note: "after Alt + Shift + ;",
+				rows: [
+					{ s: ["Esc"], d: "Reload config & exit mode" },
+					{ s: ["R"], d: "Reset layout (flatten tree)" },
+					{ s: ["Backspace"], d: "Close all windows but current" },
+					{ s: ["Alt+Shift+H J K L"], d: "Join with  ←  ↓  ↑  →" },
+				],
+			},
+			{
+				name: "workspace map",
+				caption:
+					"1–3 on external · 4–5 on laptop · collapses to laptop when undocked",
+				rows: [
+					{ s: ["1"], d: "Code: Ghostty + Cursor + Claude/Codex" },
+					{ s: ["2"], d: "Helium (personal + geoguessr)" },
+					{ s: ["4"], d: "Spotify" },
+				],
+			},
+		],
+	},
+	{
+		id: "ghostty",
+		tool: "Ghostty",
+		note: "terminal · prefix: Ctrl + S (chord)",
+		groups: [
+			{
+				name: "splits",
+				rows: [
+					{ s: ["Ctrl+S", "H J K L"], j: "then", d: "New split  ←  ↓  ↑  →" },
+					{ s: ["Ctrl+S", "P"], j: "then", d: "Previous split" },
+					{ s: ["Ctrl+S", "N"], j: "then", d: "Next split" },
+					{ s: ["Ctrl+S", "D"], j: "then", d: "Close surface / window" },
+				],
+			},
+			{
+				name: "defaults",
+				rows: [
+					{ s: ["Cmd+Enter"], d: "Toggle fullscreen" },
+					{ s: ["Cmd+N"], d: "New window" },
+					{ s: ["Cmd+T"], d: "New tab" },
+					{ s: ["Cmd+=", "Cmd+-"], j: "/", d: "Font size up / down" },
+					{ s: ["Cmd+K"], d: "Clear scrollback" },
+				],
+			},
+		],
+	},
+	{
+		id: "tmux",
+		tool: "tmux",
+		note: "multiplexer · prefix: Ctrl + A",
+		groups: [
+			{
+				name: "custom",
+				rows: [
+					{ s: ["Prefix", "R"], j: "then", d: "Reload ~/.tmux.conf" },
+					{ s: ["Prefix", "["], j: "then", d: "Enter copy-mode (vi)" },
+				],
+			},
+			{
+				name: "windows & panes",
+				rows: [
+					{ s: ["Prefix", "C"], j: "then", d: "New window" },
+					{
+						s: ["Prefix", "1 2 3"],
+						j: "then",
+						d: "Go to window N (1-indexed)",
+					},
+					{ s: ["Prefix", "N P"], j: "then", d: "Next / previous window" },
+					{ s: ["Prefix", ","], j: "then", d: "Rename window" },
+					{ s: ["Prefix", "%"], j: "then", d: "Split pane left / right" },
+					{ s: ["Prefix", '"'], j: "then", d: "Split pane top / bottom" },
+					{ s: ["Prefix", "Arrows"], j: "then", d: "Move between panes" },
+					{ s: ["Prefix", "O"], j: "then", d: "Cycle panes" },
+					{ s: ["Prefix", "Z"], j: "then", d: "Zoom / unzoom pane" },
+					{ s: ["Prefix", "Space"], j: "then", d: "Next pane layout" },
+					{ s: ["Prefix", "{ }"], j: "then", d: "Swap pane prev / next" },
+					{ s: ["Prefix", "X"], j: "then", d: "Kill pane" },
+					{ s: ["Prefix", "&"], j: "then", d: "Kill window" },
+					{ s: ["Prefix", "D"], j: "then", d: "Detach session" },
+				],
+			},
+			{
+				name: "copy-mode (vi)",
+				note: "after Prefix + [",
+				rows: [
+					{ s: ["V"], d: "Begin selection" },
+					{ s: ["Y"], d: "Yank selection → clipboard" },
+					{ s: ["/"], d: "Search forward" },
+					{ s: ["Q"], d: "Quit copy-mode" },
+				],
+			},
+		],
+	},
+	{
+		id: "neovim",
+		tool: "Neovim",
+		note: "editor · leader: Space",
+		groups: [
+			{
+				name: "editing",
+				rows: [
+					{ s: ["jk"], d: "Exit insert / visual mode" },
+					{ s: ["J"], d: "Join lines, keep cursor" },
+					{ s: ["J", "K"], j: "/", d: "Move selection down / up (visual)" },
+					{ s: [">", "<"], j: "/", d: "Indent right / left, stay in visual" },
+					{ s: ["Ctrl+L"], d: "Clear search highlight" },
+					{ s: ["Ctrl+Z"], d: "Undo (insert mode)" },
+					{ s: ["Space Space s"], d: "Source current file (reload config)" },
+				],
+			},
+			{
+				name: "line ops",
+				rows: [
+					{
+						s: ["Space s", "Space e"],
+						j: "/",
+						d: "Jump to start / end of line",
+					},
+					{ s: ["v s", "v e"], j: "/", d: "Select to start / end of line" },
+					{ s: ["Space ds", "Space de"], j: "/", d: "Delete to start / end" },
+				],
+			},
+			{
+				name: "search & files",
+				rows: [
+					{ s: ["Ctrl+P"], d: "Find files (Telescope)" },
+					{ s: ["Space fg"], d: "Live grep (search project)" },
+					{ s: ["Space fb"], d: "Find buffers" },
+					{ s: ["Space fs"], d: "Document symbols" },
+				],
+			},
+			{
+				name: "code / LSP",
+				rows: [
+					{ s: ["gd"], d: "Go to definition" },
+					{ s: ["gD"], d: "Go to declaration" },
+					{ s: ["gr"], d: "References" },
+					{ s: ["gi"], d: "Implementation" },
+					{ s: ["K"], d: "Hover documentation" },
+					{ s: ["Space ca"], d: "Code actions" },
+					{ s: ["Space dc"], d: "Debug diagnostics" },
+				],
+			},
+			{
+				name: "git",
+				rows: [
+					{ s: ["Space gp"], d: "Preview git hunk" },
+					{ s: ["Space gt"], d: "Toggle line blame" },
+				],
+			},
+			{
+				name: "navigation",
+				rows: [
+					{ s: ["Ctrl+N"], d: "Floating file tree (Neo-tree)" },
+					{ s: ["Space n"], d: "Floating file tree" },
+					{ s: ["Ctrl+H"], d: "File tree on the left" },
+					{ s: ["zk"], d: "Flash jump" },
+					{ s: ["Zk"], d: "Flash Treesitter" },
+					{
+						s: ["Space r", "Arrows"],
+						j: "then",
+						d: "Resize window (Esc exits)",
+					},
+				],
+			},
+			{
+				name: "completion & AI",
+				rows: [
+					{ s: ["Ctrl+Space"], d: "Open menu / docs" },
+					{ s: ["Ctrl+O"], d: "Show / hide documentation" },
+					{ s: ["Ctrl+N", "Ctrl+P"], j: "/", d: "Next / previous item" },
+					{ s: ["Enter"], d: "Confirm completion" },
+					{ s: ["Ctrl+E"], d: "Hide menu" },
+					{ s: ["Tab"], d: "Accept AI suggestion (Supermaven)" },
+					{ s: ["Ctrl+J"], d: "Accept word" },
+					{ s: ["Ctrl+]"], d: "Clear suggestion" },
+					{ s: ["Space cp"], d: "Toggle Supermaven" },
+				],
+			},
+			{
+				name: "terminal / todo / timers",
+				rows: [
+					{ s: ["Space Space t"], d: "Toggle floating terminal" },
+					{ s: ["Esc Esc"], d: "Exit terminal mode → normal" },
+					{ s: ["Space td"], d: "Floating todo" },
+					{ s: ["Space pt"], d: "Pomodoro timers" },
+				],
+			},
+			{
+				name: "text objects",
+				caption: "swap i ↔ a (inside / around) · swap c ↔ d / v / y",
+				rows: [
+					{ s: ["ciw"], d: "Change inner word" },
+					{ s: ['ci"'], d: "Change inside quotes ( ci' too )" },
+					{ s: ["cib"], d: "Change inside brackets ( )" },
+					{ s: ["viw"], d: "Select inner word" },
+					{ s: ["vib"], d: "Select inside brackets" },
+					{ s: ['vi"'], d: "Select inside quotes" },
+				],
+			},
+			{
+				name: "search & replace",
+				rows: [
+					{ s: [":%s/old/new/g"], d: "Replace in whole file", wide: true },
+					{ s: [":%s/old/new/gc"], d: "Replace with confirm", wide: true },
+					{ s: [":s/old/new/g"], d: "Replace on current line", wide: true },
+					{ s: ["*", "#"], j: "/", d: "Search word under cursor fwd / back" },
+					{ s: ["n", "N"], j: "/", d: "Next / previous match" },
+					{ s: ["cgn"], d: "Change next match, then . to repeat" },
+				],
+			},
+			{
+				name: "buffers",
+				rows: [
+					{ s: [":bn", ":bp"], j: "/", d: "Next / previous buffer" },
+					{ s: [":bd"], d: "Delete (close) buffer" },
+					{ s: [":ls"], d: "List buffers" },
+					{ s: ["Ctrl+^"], d: "Toggle last buffer" },
+				],
+			},
+		],
+	},
+	{
+		id: "system",
+		tool: "System",
+		note: "desktop helpers",
+		groups: [
+			{
+				name: "AeroSpace",
+				rows: [
+					{ s: ["aerospace reload-config"], d: "Reload config", wide: true },
+					{
+						s: ["open -a AeroSpace"],
+						d: "Start / focus AeroSpace",
+						wide: true,
+					},
+				],
+			},
+			{
+				name: "desktop services",
+				rows: [
+					{
+						s: ["sketchybar --reload"],
+						d: "Reload the status bar",
+						wide: true,
+					},
+					{
+						s: ["brew services restart borders"],
+						d: "Restart JankyBorders",
+						wide: true,
+					},
+				],
+			},
+		],
+	},
+];
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="robots" content="noindex" />
+		<title>keybinds · sumit.ml</title>
+		<ThemeInit />
+	</head>
+
+	<body>
+		<div class="wrap">
+			<header class="page-head">
+				<h1 class="title">keybinds</h1>
+				<div class="head-actions">
+					<button
+						id="kbd-mode-toggle"
+						class="kbd-mode"
+						type="button"
+						aria-label="Toggle Alt / Opt key labels">Alt</button
+					>
+					<ThemeToggle />
+				</div>
+			</header>
+
+			<p class="intro">
+				if you landed here somehow, hi! these are my personal keybinds, so it's
+				probably not for you, but feel free to look around!
+			</p>
+
+			<div class="search">
+				<span class="search-icon">/</span>
+				<input
+					id="kb-search"
+					type="search"
+					placeholder="search keybinds…"
+					autocomplete="off"
+					autocorrect="off"
+					autocapitalize="off"
+					spellcheck="false"
+				/>
+				<span class="search-count" id="kb-count"></span>
+			</div>
+
+			<p class="no-results" id="kb-noresults" hidden>no matches.</p>
+
+			<nav class="jump">
+				{sections.map((s) => <a href={`#${s.id}`}>{s.tool.toLowerCase()}</a>)}
+			</nav>
+
+			{
+				sections.map((section) => (
+					<section class="tool" id={section.id}>
+						<div class="tool-head">
+							<h2>{section.tool}</h2>
+							<span class="tool-note">{section.note}</span>
+						</div>
+						<div class="cards">
+							{section.groups.map((group) => (
+								<div class="card">
+									<h3>
+										<span class="hash">#</span>
+										{group.name}
+									</h3>
+									{group.note && <p class="card-note">{group.note}</p>}
+									<div class="rows">
+										{group.rows.map((row) => (
+											<div class={row.wide ? "row wide" : "row"}>
+												<div class="keys">
+													{row.s.map((step, si) => (
+														<Fragment>
+															{si > 0 && (
+																<span class="join">{row.j ?? "then"}</span>
+															)}
+															{step.split("+").map((part, pi) => (
+																<Fragment>
+																	{pi > 0 && <span class="plus">+</span>}
+																	{part.split(" ").map((k) => (
+																		<kbd data-key={k.toLowerCase()}>{k}</kbd>
+																	))}
+																</Fragment>
+															))}
+														</Fragment>
+													))}
+												</div>
+												<div class="desc">{row.d}</div>
+											</div>
+										))}
+									</div>
+									{group.caption && <p class="caption">{group.caption}</p>}
+								</div>
+							))}
+						</div>
+					</section>
+				))
+			}
+
+			<footer class="page-foot">
+				<a href="https://github.com/sumitdotml/dotfiles">github/dotfiles</a>
+			</footer>
+		</div>
+
+		<script>
+			const altKbds = document.querySelectorAll<HTMLElement>(
+				'kbd[data-key="alt"]',
+			);
+			const cmdKbds = document.querySelectorAll<HTMLElement>(
+				'kbd[data-key="cmd"]',
+			);
+			const modeBtn = document.getElementById("kbd-mode-toggle");
+
+			// caching original note text so the Alt/Opt swap stays reversible
+			const altNotes = Array.from(
+				document.querySelectorAll<HTMLElement>(".tool-note, .card-note"),
+			).filter((el) => /\bAlt\b/.test(el.textContent || ""));
+			altNotes.forEach((el) => (el.dataset.orig = el.textContent || ""));
+
+			function isMac() {
+				const nav = navigator as Navigator & {
+					userAgentData?: { platform?: string };
+				};
+				const p = (
+					nav.userAgentData?.platform ||
+					nav.platform ||
+					nav.userAgent
+				).toLowerCase();
+				return p.includes("mac");
+			}
+
+			function applyMode(mode: string) {
+				const label = mode === "mac" ? "Opt" : "Alt";
+				altKbds.forEach((k) => (k.textContent = label));
+				cmdKbds.forEach((k) => (k.textContent = mode === "mac" ? "⌘" : "Cmd"));
+				altNotes.forEach((el) => {
+					el.textContent = (el.dataset.orig || "").replace(/\bAlt\b/g, label);
+				});
+				if (modeBtn) modeBtn.textContent = mode === "mac" ? "⌥ Opt" : "Alt";
+				localStorage.setItem("kbdMode", mode);
+			}
+
+			let kbdMode =
+				localStorage.getItem("kbdMode") ?? (isMac() ? "mac" : "other");
+			applyMode(kbdMode);
+
+			modeBtn?.addEventListener("click", () => {
+				kbdMode = kbdMode === "mac" ? "other" : "mac";
+				applyMode(kbdMode);
+				runFilter();
+			});
+
+			const search = document.getElementById(
+				"kb-search",
+			) as HTMLInputElement | null;
+			const count = document.getElementById("kb-count");
+			const noResults = document.getElementById("kb-noresults");
+			const rows = Array.from(document.querySelectorAll<HTMLElement>(".row"));
+			const cards = Array.from(document.querySelectorAll<HTMLElement>(".card"));
+			const tools = Array.from(document.querySelectorAll<HTMLElement>(".tool"));
+
+			function toolAlias(name: string) {
+				if (name.includes("neovim")) return "nvim vim editor";
+				if (name.includes("aerospace"))
+					return "aero wm tiling window workspace monitor";
+				if (name.includes("ghostty")) return "term terminal";
+				if (name.includes("tmux")) return "mux multiplexer pane session window";
+				if (name.includes("system")) return "wm service desktop bar borders";
+				return "";
+			}
+
+			function keyAlias(dataKeys: string) {
+				const out: string[] = [];
+				if (dataKeys.includes("alt")) out.push("opt option ⌥");
+				if (dataKeys.includes("cmd")) out.push("command meta super ⌘");
+				if (dataKeys.includes("ctrl")) out.push("control ^");
+				if (dataKeys.includes("esc")) out.push("escape");
+				if (dataKeys.includes("space")) out.push("spc leader");
+				return out.join(" ");
+			}
+
+			// building the search index from data-key, not the visible label,
+			// so it stays correct regardless of the Alt/Opt mode
+			rows.forEach((r) => {
+				const tool = r.closest(".tool");
+				const card = r.closest(".card");
+				const toolName = (
+					tool?.querySelector("h2")?.textContent || ""
+				).toLowerCase();
+				const cardName = (
+					card?.querySelector("h3")?.textContent || ""
+				).toLowerCase();
+				const desc = (
+					r.querySelector(".desc")?.textContent || ""
+				).toLowerCase();
+				const dataKeys = Array.from(r.querySelectorAll("kbd[data-key]"))
+					.map((k) => k.getAttribute("data-key") || "")
+					.join(" ");
+				r.dataset.hay = [
+					toolName,
+					toolAlias(toolName),
+					cardName,
+					desc,
+					dataKeys,
+					keyAlias(dataKeys),
+				]
+					.join(" ")
+					.toLowerCase();
+			});
+
+			function runFilter() {
+				const tokens = (search?.value || "")
+					.toLowerCase()
+					.split(/[\s+]+/)
+					.filter(Boolean);
+				let visible = 0;
+				rows.forEach((r) => {
+					const hay = r.dataset.hay || "";
+					const match = tokens.every((t) => hay.includes(t));
+					r.style.display = match ? "" : "none";
+					if (match) visible++;
+				});
+				cards.forEach((c) => {
+					const any = Array.from(c.querySelectorAll<HTMLElement>(".row")).some(
+						(r) => r.style.display !== "none",
+					);
+					c.style.display = any ? "" : "none";
+				});
+				tools.forEach((t) => {
+					const any = Array.from(t.querySelectorAll<HTMLElement>(".card")).some(
+						(c) => c.style.display !== "none",
+					);
+					t.style.display = any ? "" : "none";
+				});
+				const active = tokens.length > 0;
+				if (count)
+					count.textContent = active
+						? visible + " match" + (visible === 1 ? "" : "es")
+						: "";
+				if (noResults) noResults.hidden = !(active && visible === 0);
+			}
+
+			search?.addEventListener("input", runFilter);
+
+			document.addEventListener("keydown", (e) => {
+				if (e.key === "/" && document.activeElement !== search) {
+					e.preventDefault();
+					search?.focus();
+				} else if (e.key === "Escape" && document.activeElement === search) {
+					search!.value = "";
+					runFilter();
+					search!.blur();
+				}
+			});
+		</script>
+	</body>
+</html>
+
+<style>
+	body {
+		--ctp-rosewater: #dc8a78;
+		--ctp-flamingo: #dd7878;
+		--ctp-pink: #ea76cb;
+		--ctp-mauve: #8839ef;
+		--ctp-red: #d20f39;
+		--ctp-peach: #fe640b;
+		--ctp-yellow: #df8e1d;
+		--ctp-green: #40a02b;
+		--ctp-teal: #179299;
+		--ctp-sky: #04a5e5;
+		--ctp-blue: #1e66f5;
+		--ctp-lavender: #7287fd;
+		--ctp-text: #4c4f69;
+		--ctp-subtext: #6c6f85;
+		--ctp-overlay: #8c8fa1;
+		--ctp-surface2: #acb0be;
+		--ctp-surface1: #bcc0cc;
+		--ctp-surface0: #ccd0da;
+		--ctp-base: #eff1f5;
+		--ctp-mantle: #e6e9ef;
+		--ctp-crust: #dce0e8;
+		--editor-bg: var(--ctp-base);
+		--editor-panel: var(--ctp-mantle);
+		--editor-card: var(--ctp-base);
+		--editor-border: var(--ctp-surface1);
+		--editor-line: rgba(124, 127, 147, 0.18);
+		--editor-active: var(--ctp-mauve);
+
+		font-family: var(--font-family-base);
+		font-weight: var(--font-weight-regular);
+		background: var(--editor-bg);
+		color: var(--text-color);
+		margin: 0;
+		font-size: 15px;
+		line-height: 1.5;
+		-webkit-font-smoothing: antialiased;
+	}
+
+	[data-theme="dark"] body {
+		--ctp-rosewater: #f5e0dc;
+		--ctp-flamingo: #f2cdcd;
+		--ctp-pink: #f5c2e7;
+		--ctp-mauve: #cba6f7;
+		--ctp-red: #f38ba8;
+		--ctp-peach: #fab387;
+		--ctp-yellow: #f9e2af;
+		--ctp-green: #a6e3a1;
+		--ctp-teal: #94e2d5;
+		--ctp-sky: #89dceb;
+		--ctp-blue: #89b4fa;
+		--ctp-lavender: #b4befe;
+		--ctp-text: #cdd6f4;
+		--ctp-subtext: #a6adc8;
+		--ctp-overlay: #6c7086;
+		--ctp-surface2: #585b70;
+		--ctp-surface1: #45475a;
+		--ctp-surface0: #313244;
+		--ctp-base: #1e1e2e;
+		--ctp-mantle: #181825;
+		--ctp-crust: #11111b;
+		--editor-bg: var(--ctp-crust);
+		--editor-panel: var(--ctp-mantle);
+		--editor-card: var(--ctp-base);
+		--editor-border: var(--ctp-surface1);
+		--editor-line: rgba(88, 91, 112, 0.34);
+		--editor-active: var(--ctp-lavender);
+		font-weight: var(--font-weight-light);
+	}
+
+	body {
+		--text-color: var(--ctp-text);
+		--text-color-light: var(--ctp-subtext);
+		--text-color-muted: var(--ctp-overlay);
+		--bg-color: var(--editor-bg);
+		--accent-purple: var(--editor-active);
+	}
+
+	.wrap {
+		max-width: 1080px;
+		margin: 0 auto;
+		padding: 2.25rem 1.25rem 4rem;
+	}
+
+	.page-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		flex-wrap: wrap;
+		border: 1px solid var(--editor-border);
+		border-bottom: 0;
+		border-radius: 8px 8px 0 0;
+		background: var(--editor-panel);
+		padding: 1rem 1rem 0.85rem;
+	}
+
+	.title {
+		margin: 0;
+		font-family: var(--font-family-code);
+		font-size: clamp(1.35rem, 3.5vw, 1.85rem);
+		font-weight: var(--font-weight-semibold);
+		color: var(--text-color);
+	}
+
+	.title::before {
+		content: ":";
+		color: var(--ctp-green);
+	}
+
+	.intro {
+		color: var(--text-color-light);
+		margin: 0;
+		font-size: 0.9rem;
+		border-left: 1px solid var(--editor-border);
+		border-right: 1px solid var(--editor-border);
+		background: var(--editor-panel);
+		padding: 0 1rem 1rem;
+	}
+
+	.head-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.kbd-mode {
+		font-family: var(--font-family-code);
+		font-size: 0.78rem;
+		cursor: pointer;
+		color: var(--text-color-light);
+		background: var(--ctp-surface0);
+		border: 1px solid var(--editor-border);
+		border-radius: 6px;
+		padding: 0.35rem 0.6rem;
+		min-width: 3.4rem;
+		transition:
+			color 0.15s ease,
+			border-color 0.15s ease;
+	}
+
+	.kbd-mode:hover {
+		color: var(--accent-purple);
+		border-color: var(--accent-purple);
+	}
+
+	.search {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		border: 1px solid var(--editor-border);
+		border-radius: 0;
+		padding: 0.55rem 0.85rem;
+		background: var(--editor-panel);
+		transition:
+			background 0.15s ease,
+			border-color 0.15s ease;
+	}
+
+	.search:focus-within {
+		background: var(--editor-card);
+		border-color: var(--accent-purple);
+	}
+
+	.search-icon {
+		font-family: var(--font-family-code);
+		color: var(--ctp-mauve);
+		border: 1px solid var(--editor-border);
+		border-radius: 5px;
+		padding: 0 0.4em;
+		font-size: 0.8rem;
+		line-height: 1.5;
+	}
+
+	.search input {
+		flex: 1;
+		min-width: 0;
+		font-family: var(--font-family-code);
+		font-size: 0.88rem;
+		color: var(--text-color);
+		background: transparent;
+		border: none;
+		outline: none;
+		padding: 0;
+	}
+
+	.search input::placeholder {
+		color: var(--text-color-muted);
+	}
+
+	.search-count {
+		font-family: var(--font-family-code);
+		font-size: 0.74rem;
+		color: var(--text-color-muted);
+		white-space: nowrap;
+	}
+
+	.no-results {
+		font-family: var(--font-family-code);
+		font-size: 0.85rem;
+		color: var(--text-color-muted);
+		margin: 0;
+		border-left: 1px solid var(--editor-border);
+		border-right: 1px solid var(--editor-border);
+		background: var(--editor-panel);
+		padding: 0.8rem 1.1rem;
+	}
+
+	.jump {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		border: 1px solid var(--editor-border);
+		border-top: 0;
+		border-radius: 0 0 8px 8px;
+		background: var(--editor-panel);
+		margin-bottom: 2rem;
+		padding: 0.85rem 1.1rem 1rem;
+	}
+
+	.jump a {
+		font-family: var(--font-family-code);
+		font-size: 0.8rem;
+		text-decoration: none;
+		color: var(--text-color-light);
+		border: 1px solid var(--editor-border);
+		border-radius: 6px;
+		padding: 0.25rem 0.6rem;
+		background: transparent;
+		transition:
+			background 0.15s ease,
+			color 0.15s ease,
+			border-color 0.15s ease;
+	}
+
+	.jump a:hover {
+		color: var(--accent-purple);
+		border-color: var(--accent-purple);
+	}
+
+	.tool {
+		margin-bottom: 2.75rem;
+		--section-accent: var(--accent-purple);
+		--section-accent-rgb: 136, 57, 239;
+	}
+
+	.tool-head {
+		display: flex;
+		align-items: baseline;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+		padding-bottom: 0.6rem;
+		margin-bottom: 1.1rem;
+		border-bottom: 1px solid var(--editor-line);
+	}
+
+	[data-theme="dark"] .tool-head {
+		border-bottom-color: rgba(var(--section-accent-rgb), 0.2);
+	}
+
+	.tool-head h2 {
+		margin: 0;
+		font-family: var(--font-family-code);
+		font-size: 1.35rem;
+		font-weight: var(--font-weight-semibold);
+		color: var(--text-color);
+	}
+
+	.tool-head h2::before {
+		content: "## ";
+		color: var(--section-accent);
+	}
+
+	.tool-note {
+		font-family: var(--font-family-code);
+		font-size: 0.78rem;
+		color: var(--text-color-muted);
+	}
+
+	.cards {
+		column-width: 26rem;
+		column-gap: 1rem;
+	}
+
+	.card {
+		break-inside: avoid;
+		-webkit-column-break-inside: avoid;
+		margin-bottom: 1rem;
+		border: 1px solid var(--editor-border);
+		border-radius: 8px;
+		padding: 1rem 1.1rem 1.1rem;
+		background: var(--editor-card);
+	}
+
+	[data-theme="dark"] .card {
+		border-color: rgba(var(--section-accent-rgb), 0.16);
+		background: var(--editor-card);
+		box-shadow: inset 0 1px 0 rgba(var(--section-accent-rgb), 0.06);
+	}
+
+	.card h3 {
+		margin: 0 0 0.7rem;
+		font-size: 0.95rem;
+		font-weight: var(--font-weight-medium);
+		color: var(--text-color);
+	}
+
+	.card h3 .hash {
+		color: var(--section-accent);
+		margin-right: 0.3rem;
+	}
+
+	[data-theme="dark"] #aerospace {
+		--section-accent: var(--ctp-sky);
+		--section-accent-rgb: 137, 220, 235;
+	}
+
+	[data-theme="dark"] #ghostty {
+		--section-accent: var(--ctp-mauve);
+		--section-accent-rgb: 203, 166, 247;
+	}
+
+	[data-theme="dark"] #tmux {
+		--section-accent: var(--ctp-green);
+		--section-accent-rgb: 166, 227, 161;
+	}
+
+	[data-theme="dark"] #neovim {
+		--section-accent: var(--ctp-yellow);
+		--section-accent-rgb: 249, 226, 175;
+	}
+
+	[data-theme="dark"] #system {
+		--section-accent: var(--ctp-pink);
+		--section-accent-rgb: 245, 194, 231;
+	}
+
+	.card-note {
+		margin: -0.4rem 0 0.7rem;
+		font-size: 0.75rem;
+		color: var(--text-color-muted);
+	}
+
+	.caption {
+		margin: 0.8rem 0 0;
+		font-size: 0.72rem;
+		color: var(--text-color-muted);
+		border-top: 1px dashed var(--editor-line);
+		padding-top: 0.6rem;
+	}
+
+	.rows {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.row {
+		display: grid;
+		grid-template-columns: minmax(7rem, 12.5rem) 1fr;
+		gap: 0.75rem;
+		align-items: baseline;
+		padding: 0.32rem 0;
+	}
+
+	.row + .row {
+		border-top: 1px solid var(--editor-line);
+	}
+
+	.row.wide {
+		grid-template-columns: 1fr;
+		gap: 0.2rem;
+	}
+
+	.keys {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.25rem;
+		min-width: 0;
+	}
+
+	.desc {
+		color: var(--text-color-light);
+		font-size: 0.85rem;
+	}
+
+	kbd {
+		font-family: var(--font-family-code);
+		font-size: 0.74rem;
+		line-height: 1;
+		color: var(--ctp-text);
+		background: var(--ctp-surface0);
+		border: 1px solid var(--ctp-surface1);
+		border-bottom-width: 2px;
+		border-radius: 5px;
+		padding: 0.28em 0.45em;
+		white-space: nowrap;
+	}
+
+	[data-theme="dark"] .jump a:nth-child(5n + 1) {
+		color: var(--ctp-sky);
+		border-color: rgba(137, 220, 235, 0.28);
+		background: rgba(137, 220, 235, 0.05);
+	}
+
+	[data-theme="dark"] .jump a:nth-child(5n + 2) {
+		color: var(--ctp-mauve);
+		border-color: rgba(203, 166, 247, 0.28);
+		background: rgba(203, 166, 247, 0.05);
+	}
+
+	[data-theme="dark"] .jump a:nth-child(5n + 3) {
+		color: var(--ctp-green);
+		border-color: rgba(166, 227, 161, 0.24);
+		background: rgba(166, 227, 161, 0.045);
+	}
+
+	[data-theme="dark"] .jump a:nth-child(5n + 4) {
+		color: var(--ctp-yellow);
+		border-color: rgba(249, 226, 175, 0.24);
+		background: rgba(249, 226, 175, 0.045);
+	}
+
+	[data-theme="dark"] .jump a:nth-child(5n + 5) {
+		color: var(--ctp-pink);
+		border-color: rgba(245, 194, 231, 0.24);
+		background: rgba(245, 194, 231, 0.045);
+	}
+
+	[data-theme="dark"] kbd[data-key="alt"],
+	[data-theme="dark"] kbd[data-key="cmd"],
+	[data-theme="dark"] kbd[data-key="ctrl"],
+	[data-theme="dark"] kbd[data-key="prefix"],
+	[data-theme="dark"] kbd[data-key="space"] {
+		color: var(--ctp-lavender);
+		border-color: rgba(180, 190, 254, 0.34);
+		background: rgba(180, 190, 254, 0.08);
+	}
+
+	.plus,
+	.join {
+		font-family: var(--font-family-code);
+		font-size: 0.7rem;
+		color: var(--text-color-muted);
+	}
+
+	.join {
+		margin: 0 0.15rem;
+		font-style: italic;
+	}
+
+	.page-foot {
+		margin-top: 3rem;
+		padding-top: 1.2rem;
+		border-top: 1px solid var(--editor-line);
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		gap: 0.5rem;
+		font-family: var(--font-family-code);
+		font-size: 0.76rem;
+		color: var(--text-color-muted);
+	}
+
+	.page-foot a {
+		color: var(--text-color-light);
+		text-decoration: none;
+	}
+
+	.page-foot a:hover {
+		color: var(--accent-purple);
+	}
+
+	@media (max-width: 560px) {
+		.wrap {
+			padding: 1rem 0.75rem 3rem;
+		}
+
+		.page-head {
+			border-radius: 8px 8px 0 0;
+			padding: 0.9rem;
+		}
+
+		.intro,
+		.search,
+		.jump {
+			padding-left: 0.9rem;
+			padding-right: 0.9rem;
+		}
+
+		.row {
+			grid-template-columns: 1fr;
+			gap: 0.25rem;
+			padding: 0.45rem 0;
+		}
+	}
+</style>

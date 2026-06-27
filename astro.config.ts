@@ -44,7 +44,7 @@ export default defineConfig({
 			rehypePlugins: [rehypeKatex],
 		}),
 		sitemap({
-			filter: (page) => !page.includes("/chiya"),
+			filter: (page) => !page.includes("/chiya") && !page.includes("/keybinds"),
 		}),
 		react(),
 	],
