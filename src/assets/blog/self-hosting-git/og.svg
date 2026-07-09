@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+	<rect width="1200" height="630" fill="#fafaf8" />
+	<rect x="64" y="64" width="1072" height="502" rx="0" fill="none" stroke="#e4e0dd" stroke-width="1" />
+
+	<text x="96" y="108" fill="#666666" font-family="IBM Plex Mono, Menlo, Consolas, monospace" font-size="24" font-weight="400">
+		sumit.ml
+	</text>
+
+	<text x="96" y="292" fill="#333333" font-family="IBM Plex Mono, Menlo, Consolas, monospace" font-size="78" font-weight="500">
+		Self-Hosting Git
+	</text>
+
+	<text x="100" y="354" fill="#666666" font-family="IBM Plex Mono, Menlo, Consolas, monospace" font-size="30" font-weight="400">
+		Gitea + Tailscale + Cloudflare Tunnel
+	</text>
+
+	<g fill="none" stroke-linecap="round" stroke-linejoin="round">
+		<path d="M760 462 H828 C858 462 862 506 892 506 H1042" stroke="#333333" stroke-opacity="0.24" stroke-width="3" />
+		<path d="M828 462 C858 462 862 418 892 418 H994" stroke="#8b5cf6" stroke-opacity="0.65" stroke-width="3" />
+	</g>
+
+	<g>
+		<circle cx="760" cy="462" r="8" fill="#fafaf8" stroke="#333333" stroke-opacity="0.45" stroke-width="3" />
+		<circle cx="828" cy="462" r="8" fill="#fafaf8" stroke="#333333" stroke-opacity="0.45" stroke-width="3" />
+		<circle cx="892" cy="506" r="8" fill="#8b5cf6" />
+		<circle cx="958" cy="506" r="8" fill="#fafaf8" stroke="#333333" stroke-opacity="0.45" stroke-width="3" />
+		<circle cx="1042" cy="506" r="8" fill="#fafaf8" stroke="#333333" stroke-opacity="0.45" stroke-width="3" />
+		<circle cx="892" cy="418" r="8" fill="#fafaf8" stroke="#8b5cf6" stroke-opacity="0.75" stroke-width="3" />
+		<circle cx="994" cy="418" r="8" fill="#fafaf8" stroke="#8b5cf6" stroke-opacity="0.75" stroke-width="3" />
+	</g>
+</svg>
