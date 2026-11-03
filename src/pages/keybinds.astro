@@ -6,24 +6,31 @@ import ThemeToggle from "../components/ThemeToggle.astro";
 
 type Row = { s: string[]; d: string; j?: string; wide?: boolean };
 type Group = { name: string; note?: string; caption?: string; rows: Row[] };
-type Section = { id: string; tool: string; note: string; groups: Group[] };
+type Section = {
+	id: string;
+	tool: string;
+	note: string;
+	accent: string;
+	groups: Group[];
+};
 
 const sections: Section[] = [
 	{
 		id: "aerospace",
 		tool: "AeroSpace",
-		note: "i3-like tiling WM · modifier: Alt",
+		note: "tiling WM · modifier: Alt",
+		accent: "sky",
 		groups: [
 			{
 				name: "main mode",
 				rows: [
-					{ s: ["Alt+Enter"], d: "Open / focus Ghostty" },
+					{ s: ["Alt+Enter"], d: "Go to workspace 1, open / focus Rex" },
 					{ s: ["Alt+H J K L"], d: "Focus  ←  ↓  ↑  →  (skips floats)" },
 					{ s: ["Alt+Shift+H J K L"], d: "Move window  ←  ↓  ↑  →" },
 					{ s: ["Alt+-", "Alt+="], j: "/", d: "Shrink / grow window" },
 					{ s: ["Alt+F"], d: "Maximize / restore (fullscreen)" },
-					{ s: ["Alt+1 2 3 4 5"], d: "Switch to workspace 1–5" },
-					{ s: ["Alt+Shift+1 2 3 4 5"], d: "Move window to workspace" },
+					{ s: ["Alt+1–6"], d: "Switch to workspace 1–6" },
+					{ s: ["Alt+Shift+1–6"], d: "Move window to workspace" },
 					{ s: ["Alt+Tab"], d: "Previous workspace (back-and-forth)" },
 					{ s: ["Alt+Shift+Tab"], d: "Focus other monitor" },
 					{ s: ["Alt+Shift+M"], d: "Send window to other monitor" },
@@ -58,11 +65,121 @@ const sections: Section[] = [
 			{
 				name: "workspace map",
 				caption:
-					"1–3 on external · 4–5 on laptop · collapses to laptop when undocked",
+					"1–4 on external · 5–6 on laptop · collapses to laptop when undocked",
 				rows: [
-					{ s: ["1"], d: "Code: Ghostty + Cursor + Claude/Codex" },
-					{ s: ["2"], d: "Personal browser / Helium" },
-					{ s: ["4"], d: "Media: Spotify / Helium" },
+					{ s: ["1"], d: "Code: terminal + Cursor + Claude / Codex apps" },
+					{ s: ["2"], d: "Personal browser (Helium)" },
+					{ s: ["4"], d: "Helium misc profile" },
+					{ s: ["5"], d: "Spotify" },
+				],
+			},
+		],
+	},
+	{
+		id: "rex",
+		tool: "Rex",
+		note: "terminal + multiplexer · prefix: Ctrl + A",
+		accent: "peach",
+		groups: [
+			{
+				name: "tabs",
+				rows: [
+					{ s: ["Prefix", "C"], j: "then", d: "New tab" },
+					{ s: ["Prefix", "N P"], j: "then", d: "Next / previous tab" },
+					{ s: ["Cmd+Alt+← →"], d: "Previous / next tab" },
+					{ s: ["Prefix", "1–9"], j: "then", d: "Go to tab N" },
+					{ s: ["Prefix", ","], j: "then", d: "Rename tab" },
+					{ s: ["Prefix", "&"], j: "then", d: "Close tab" },
+				],
+			},
+			{
+				name: "panes",
+				rows: [
+					{ s: ["Prefix", "%"], j: "then", d: "Split right" },
+					{ s: ["Prefix", '"'], j: "then", d: "Split down" },
+					{ s: ["Prefix", "H J K L"], j: "then", d: "Focus  ←  ↓  ↑  →" },
+					{ s: ["Prefix", "Arrows"], j: "then", d: "Focus pane" },
+					{ s: ["Prefix", "O"], j: "then", d: "Cycle panes" },
+					{ s: ["Prefix", "Z"], j: "then", d: "Zoom / unzoom pane" },
+					{ s: ["Prefix", "X"], j: "then", d: "Close pane" },
+					{ s: ["Prefix", "!"], j: "then", d: "Move pane to its own tab" },
+					{ s: ["Prefix", "E"], j: "then", d: "Even out pane sizes" },
+				],
+			},
+			{
+				name: "resize",
+				rows: [
+					{ s: ["Prefix", "Ctrl+Arrows"], j: "then", d: "Resize a little" },
+					{ s: ["Prefix", "Alt+Arrows"], j: "then", d: "Resize a lot" },
+					{
+						s: ["Prefix", "Shift+R"],
+						j: "then",
+						d: "Resize mode: H J K L / arrows, = evens, Esc exits",
+					},
+				],
+			},
+			{
+				name: "sessions & misc",
+				rows: [
+					{ s: ["Prefix", "S W"], j: "then", d: "Session picker" },
+					{ s: ["Prefix", "( )"], j: "then", d: "Previous / next session" },
+					{ s: ["Prefix", "$"], j: "then", d: "Rename session" },
+					{ s: ["Prefix", ": ?"], j: "then", d: "Command palette" },
+					{ s: ["Prefix", "/"], j: "then", d: "Find in scrollback" },
+					{ s: ["Prefix", "Shift+S"], j: "then", d: "Agent activity sidebar" },
+					{ s: ["Prefix", "R"], j: "then", d: "Reload config" },
+					{ s: ["Prefix", "Ctrl+A"], j: "then", d: "Send a literal Ctrl+A" },
+				],
+			},
+			{
+				name: "agents & tools",
+				rows: [
+					{ s: ["Prefix", "A C"], j: "then", d: "Claude Code in a new tab" },
+					{ s: ["Prefix", "A X"], j: "then", d: "Codex in a new tab" },
+					{
+						s: ["Prefix", "A Shift+C"],
+						j: "then",
+						d: "Claude Code split in on the left (Shift+X for Codex)",
+					},
+					{
+						s: ["Prefix", "A W"],
+						j: "then",
+						d: "New tab: agent left, nvim right",
+					},
+					{ s: ["Prefix", "G"], j: "then", d: "Floating lazygit" },
+					{
+						s: ["Prefix", "["],
+						j: "then",
+						d: "Copy mode (scrollback in nvim)",
+					},
+				],
+			},
+			{
+				name: "copy mode",
+				note: "after Prefix + [ · read-only nvim",
+				rows: [
+					{ s: ["V", "Shift+V"], j: "/", d: "Select characters / lines" },
+					{ s: ["Y"], d: "Copy selection → clipboard" },
+					{ s: ["/"], d: "Search" },
+					{ s: ["Q"], d: "Close copy mode" },
+				],
+			},
+			{
+				name: "rex defaults",
+				rows: [
+					{ s: ["Cmd+T"], d: "New tab in this session" },
+					{ s: ["Cmd+Shift+N"], d: "New session" },
+					{ s: ["Cmd+K"], d: "Session picker" },
+					{ s: ["Cmd+W"], d: "Close pane (last pane closes the tab)" },
+					{ s: ["Cmd+Alt+W"], d: "Close tab" },
+					{ s: ["Cmd+1–9"], d: "Go to tab N" },
+					{ s: ["Cmd+D", "Cmd+Shift+D"], j: "/", d: "Split right / down" },
+					{ s: ["Cmd+Alt+↑ ↓"], d: "Focus pane up / down" },
+					{ s: ["Cmd+Shift+Enter"], d: "Zoom pane" },
+					{ s: ["Cmd+↑ ↓"], d: "Jump to previous / next prompt" },
+					{ s: ["Cmd+F"], d: "Find" },
+					{ s: ["Cmd+Shift+P"], d: "Command palette" },
+					{ s: ["Cmd+."], d: "Toggle activity" },
 				],
 			},
 		],
@@ -71,6 +188,7 @@ const sections: Section[] = [
 		id: "ghostty",
 		tool: "Ghostty",
 		note: "terminal · prefix: Ctrl + S (chord)",
+		accent: "mauve",
 		groups: [
 			{
 				name: "splits",
@@ -97,6 +215,7 @@ const sections: Section[] = [
 		id: "tmux",
 		tool: "tmux",
 		note: "multiplexer · prefix: Ctrl + A",
+		accent: "green",
 		groups: [
 			{
 				name: "custom",
@@ -144,6 +263,7 @@ const sections: Section[] = [
 		id: "neovim",
 		tool: "Neovim",
 		note: "editor · leader: Space",
+		accent: "yellow",
 		groups: [
 			{
 				name: "editing",
@@ -152,9 +272,20 @@ const sections: Section[] = [
 					{ s: ["J"], d: "Join lines, keep cursor" },
 					{ s: ["J", "K"], j: "/", d: "Move selection down / up (visual)" },
 					{ s: [">", "<"], j: "/", d: "Indent right / left, stay in visual" },
+					{ s: ["gcc", "gc"], j: "/", d: "Comment line / motion or selection" },
 					{ s: ["Ctrl+L"], d: "Clear search highlight" },
 					{ s: ["Ctrl+Z"], d: "Undo (insert mode)" },
 					{ s: ["Space Space s"], d: "Source current file (reload config)" },
+				],
+			},
+			{
+				name: "surround",
+				caption: 'e.g. ysiw" wraps a word in quotes · cs"\' swaps " for \'',
+				rows: [
+					{ s: ["ys"], d: "Add surround (+ motion + char)" },
+					{ s: ["cs"], d: "Change surround (old char, new char)" },
+					{ s: ["ds"], d: "Delete surround" },
+					{ s: ["S"], d: "Surround selection (visual)" },
 				],
 			},
 			{
@@ -181,12 +312,13 @@ const sections: Section[] = [
 			{
 				name: "code / LSP",
 				rows: [
-					{ s: ["gd"], d: "Go to definition" },
+					{ s: ["gd"], d: "Go to definition (go to file in MDX)" },
 					{ s: ["gD"], d: "Go to declaration" },
 					{ s: ["gr"], d: "References" },
 					{ s: ["gi"], d: "Implementation" },
 					{ s: ["K"], d: "Hover documentation" },
 					{ s: ["Space ca"], d: "Code actions" },
+					{ s: ["Space gf"], d: "Format buffer" },
 					{ s: ["Space dc"], d: "Debug diagnostics" },
 				],
 			},
@@ -200,15 +332,25 @@ const sections: Section[] = [
 			{
 				name: "navigation",
 				rows: [
-					{ s: ["Ctrl+N"], d: "Floating file tree (Neo-tree)" },
-					{ s: ["Space n"], d: "Floating file tree" },
+					{
+						s: ["Ctrl+N", "Space n"],
+						j: "/",
+						d: "Floating file tree (Neo-tree)",
+					},
 					{ s: ["Ctrl+H"], d: "File tree on the left" },
 					{ s: ["zk"], d: "Flash jump" },
 					{ s: ["Zk"], d: "Flash Treesitter" },
 					{
+						s: ["r", "R"],
+						j: "/",
+						d: "Remote Flash / Treesitter search (after an operator)",
+					},
+					{ s: ["Ctrl+S"], d: "Toggle Flash in / search" },
+					{ s: ["Space z"], d: "Center the buffer (no-neck-pain)" },
+					{
 						s: ["Space r", "Arrows"],
 						j: "then",
-						d: "Resize window (Esc exits)",
+						d: "Resize window (Esc or Q exits)",
 					},
 				],
 			},
@@ -218,8 +360,10 @@ const sections: Section[] = [
 					{ s: ["Ctrl+Space"], d: "Open menu / docs" },
 					{ s: ["Ctrl+O"], d: "Show / hide documentation" },
 					{ s: ["Ctrl+N", "Ctrl+P"], j: "/", d: "Next / previous item" },
-					{ s: ["Enter"], d: "Confirm completion" },
+					{ s: ["Ctrl+Y"], d: "Accept completion" },
 					{ s: ["Ctrl+E"], d: "Hide menu" },
+					{ s: ["Ctrl+B", "Ctrl+F"], j: "/", d: "Scroll docs up / down" },
+					{ s: ["Ctrl+K"], d: "Show / hide signature help" },
 					{ s: ["Tab"], d: "Accept AI suggestion (Supermaven)" },
 					{ s: ["Ctrl+J"], d: "Accept word" },
 					{ s: ["Ctrl+]"], d: "Clear suggestion" },
@@ -231,8 +375,9 @@ const sections: Section[] = [
 				rows: [
 					{ s: ["Space Space t"], d: "Toggle floating terminal" },
 					{ s: ["Esc Esc"], d: "Exit terminal mode → normal" },
-					{ s: ["Space td"], d: "Floating todo" },
+					{ s: ["Space td"], d: "Floating todo (Q closes)" },
 					{ s: ["Space pt"], d: "Pomodoro timers" },
+					{ s: ["Space mr"], d: "Toggle markdown rendering" },
 				],
 			},
 			{
@@ -273,6 +418,7 @@ const sections: Section[] = [
 		id: "system",
 		tool: "System",
 		note: "desktop helpers",
+		accent: "pink",
 		groups: [
 			{
 				name: "AeroSpace",
@@ -348,15 +494,28 @@ const sections: Section[] = [
 				<span class="search-count" id="kb-count"></span>
 			</div>
 
-			<p class="no-results" id="kb-noresults" hidden>no matches.</p>
-
 			<nav class="jump">
-				{sections.map((s) => <a href={`#${s.id}`}>{s.tool.toLowerCase()}</a>)}
+				{
+					sections.map((s) => (
+						<a
+							href={`#${s.id}`}
+							style={`--section-accent: var(--ctp-${s.accent})`}
+						>
+							{s.tool.toLowerCase()}
+						</a>
+					))
+				}
 			</nav>
+
+			<p class="no-results" id="kb-noresults" hidden>no matches.</p>
 
 			{
 				sections.map((section) => (
-					<section class="tool" id={section.id}>
+					<section
+						class="tool"
+						id={section.id}
+						style={`--section-accent: var(--ctp-${section.accent})`}
+					>
 						<div class="tool-head">
 							<h2>{section.tool}</h2>
 							<span class="tool-note">{section.note}</span>
@@ -467,6 +626,8 @@ const sections: Section[] = [
 				if (name.includes("neovim")) return "nvim vim editor";
 				if (name.includes("aerospace"))
 					return "aero wm tiling window workspace monitor";
+				if (name.includes("rex"))
+					return "term terminal mux multiplexer pane session tab agent claude codex";
 				if (name.includes("ghostty")) return "term terminal";
 				if (name.includes("tmux")) return "mux multiplexer pane session window";
 				if (name.includes("system")) return "wm service desktop bar borders";
@@ -562,38 +723,29 @@ const sections: Section[] = [
 
 <style>
 	body {
-		--ctp-rosewater: #dc8a78;
-		--ctp-flamingo: #dd7878;
 		--ctp-pink: #ea76cb;
 		--ctp-mauve: #8839ef;
-		--ctp-red: #d20f39;
 		--ctp-peach: #fe640b;
 		--ctp-yellow: #df8e1d;
 		--ctp-green: #40a02b;
-		--ctp-teal: #179299;
 		--ctp-sky: #04a5e5;
-		--ctp-blue: #1e66f5;
 		--ctp-lavender: #7287fd;
 		--ctp-text: #4c4f69;
 		--ctp-subtext: #6c6f85;
 		--ctp-overlay: #8c8fa1;
-		--ctp-surface2: #acb0be;
 		--ctp-surface1: #bcc0cc;
 		--ctp-surface0: #ccd0da;
 		--ctp-base: #eff1f5;
-		--ctp-mantle: #e6e9ef;
 		--ctp-crust: #dce0e8;
-		--editor-bg: var(--ctp-base);
-		--editor-panel: var(--ctp-mantle);
-		--editor-card: var(--ctp-base);
-		--editor-border: var(--ctp-surface1);
-		--editor-line: rgba(124, 127, 147, 0.18);
-		--editor-active: var(--ctp-mauve);
+		--line: color-mix(in srgb, var(--ctp-overlay) 22%, transparent);
+		/* feeding the shared ThemeToggle the page palette */
+		--text-color: var(--ctp-text);
+		--accent-purple: var(--ctp-lavender);
 
 		font-family: var(--font-family-base);
 		font-weight: var(--font-weight-regular);
-		background: var(--editor-bg);
-		color: var(--text-color);
+		background: var(--ctp-base);
+		color: var(--ctp-text);
 		margin: 0;
 		font-size: 15px;
 		line-height: 1.5;
@@ -601,48 +753,28 @@ const sections: Section[] = [
 	}
 
 	[data-theme="dark"] body {
-		--ctp-rosewater: #f5e0dc;
-		--ctp-flamingo: #f2cdcd;
 		--ctp-pink: #f5c2e7;
 		--ctp-mauve: #cba6f7;
-		--ctp-red: #f38ba8;
 		--ctp-peach: #fab387;
 		--ctp-yellow: #f9e2af;
 		--ctp-green: #a6e3a1;
-		--ctp-teal: #94e2d5;
 		--ctp-sky: #89dceb;
-		--ctp-blue: #89b4fa;
 		--ctp-lavender: #b4befe;
 		--ctp-text: #cdd6f4;
 		--ctp-subtext: #a6adc8;
 		--ctp-overlay: #6c7086;
-		--ctp-surface2: #585b70;
 		--ctp-surface1: #45475a;
 		--ctp-surface0: #313244;
 		--ctp-base: #1e1e2e;
-		--ctp-mantle: #181825;
 		--ctp-crust: #11111b;
-		--editor-bg: var(--ctp-crust);
-		--editor-panel: var(--ctp-mantle);
-		--editor-card: var(--ctp-base);
-		--editor-border: var(--ctp-surface1);
-		--editor-line: rgba(88, 91, 112, 0.34);
-		--editor-active: var(--ctp-lavender);
+		background: var(--ctp-crust);
 		font-weight: var(--font-weight-light);
-	}
-
-	body {
-		--text-color: var(--ctp-text);
-		--text-color-light: var(--ctp-subtext);
-		--text-color-muted: var(--ctp-overlay);
-		--bg-color: var(--editor-bg);
-		--accent-purple: var(--editor-active);
 	}
 
 	.wrap {
 		max-width: 1080px;
 		margin: 0 auto;
-		padding: 2.25rem 1.25rem 4rem;
+		padding: 2.5rem 1.25rem 4rem;
 	}
 
 	.page-head {
@@ -650,12 +782,6 @@ const sections: Section[] = [
 		align-items: center;
 		justify-content: space-between;
 		gap: 1rem;
-		flex-wrap: wrap;
-		border: 1px solid var(--editor-border);
-		border-bottom: 0;
-		border-radius: 8px 8px 0 0;
-		background: var(--editor-panel);
-		padding: 1rem 1rem 0.85rem;
 	}
 
 	.title {
@@ -663,7 +789,6 @@ const sections: Section[] = [
 		font-family: var(--font-family-code);
 		font-size: clamp(1.35rem, 3.5vw, 1.85rem);
 		font-weight: var(--font-weight-semibold);
-		color: var(--text-color);
 	}
 
 	.title::before {
@@ -672,13 +797,9 @@ const sections: Section[] = [
 	}
 
 	.intro {
-		color: var(--text-color-light);
-		margin: 0;
+		color: var(--ctp-subtext);
+		margin: 0.4rem 0 1.5rem;
 		font-size: 0.9rem;
-		border-left: 1px solid var(--editor-border);
-		border-right: 1px solid var(--editor-border);
-		background: var(--editor-panel);
-		padding: 0 1rem 1rem;
 	}
 
 	.head-actions {
@@ -691,9 +812,9 @@ const sections: Section[] = [
 		font-family: var(--font-family-code);
 		font-size: 0.78rem;
 		cursor: pointer;
-		color: var(--text-color-light);
-		background: var(--ctp-surface0);
-		border: 1px solid var(--editor-border);
+		color: var(--ctp-subtext);
+		background: transparent;
+		border: 1px solid var(--ctp-surface1);
 		border-radius: 6px;
 		padding: 0.35rem 0.6rem;
 		min-width: 3.4rem;
@@ -703,32 +824,27 @@ const sections: Section[] = [
 	}
 
 	.kbd-mode:hover {
-		color: var(--accent-purple);
-		border-color: var(--accent-purple);
+		color: var(--ctp-lavender);
+		border-color: var(--ctp-lavender);
 	}
 
 	.search {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		border: 1px solid var(--editor-border);
-		border-radius: 0;
-		padding: 0.55rem 0.85rem;
-		background: var(--editor-panel);
-		transition:
-			background 0.15s ease,
-			border-color 0.15s ease;
+		gap: 0.6rem;
+		border-bottom: 1px solid var(--ctp-surface1);
+		padding: 0.5rem 0;
+		transition: border-color 0.15s ease;
 	}
 
 	.search:focus-within {
-		background: var(--editor-card);
-		border-color: var(--accent-purple);
+		border-bottom-color: var(--ctp-lavender);
 	}
 
 	.search-icon {
 		font-family: var(--font-family-code);
 		color: var(--ctp-mauve);
-		border: 1px solid var(--editor-border);
+		border: 1px solid var(--ctp-surface1);
 		border-radius: 5px;
 		padding: 0 0.4em;
 		font-size: 0.8rem;
@@ -740,7 +856,7 @@ const sections: Section[] = [
 		min-width: 0;
 		font-family: var(--font-family-code);
 		font-size: 0.88rem;
-		color: var(--text-color);
+		color: var(--ctp-text);
 		background: transparent;
 		border: none;
 		outline: none;
@@ -748,63 +864,52 @@ const sections: Section[] = [
 	}
 
 	.search input::placeholder {
-		color: var(--text-color-muted);
+		color: var(--ctp-overlay);
 	}
 
 	.search-count {
 		font-family: var(--font-family-code);
 		font-size: 0.74rem;
-		color: var(--text-color-muted);
+		color: var(--ctp-overlay);
 		white-space: nowrap;
-	}
-
-	.no-results {
-		font-family: var(--font-family-code);
-		font-size: 0.85rem;
-		color: var(--text-color-muted);
-		margin: 0;
-		border-left: 1px solid var(--editor-border);
-		border-right: 1px solid var(--editor-border);
-		background: var(--editor-panel);
-		padding: 0.8rem 1.1rem;
 	}
 
 	.jump {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
-		border: 1px solid var(--editor-border);
-		border-top: 0;
-		border-radius: 0 0 8px 8px;
-		background: var(--editor-panel);
-		margin-bottom: 2rem;
-		padding: 0.85rem 1.1rem 1rem;
+		gap: 0.25rem 1.1rem;
+		margin: 0.9rem 0 2.5rem;
 	}
 
 	.jump a {
 		font-family: var(--font-family-code);
 		font-size: 0.8rem;
 		text-decoration: none;
-		color: var(--text-color-light);
-		border: 1px solid var(--editor-border);
-		border-radius: 6px;
-		padding: 0.25rem 0.6rem;
-		background: transparent;
-		transition:
-			background 0.15s ease,
-			color 0.15s ease,
-			border-color 0.15s ease;
+		color: var(--section-accent);
+		opacity: 0.85;
+	}
+
+	.jump a::before {
+		content: "#";
+		margin-right: 0.15rem;
+		opacity: 0.6;
 	}
 
 	.jump a:hover {
-		color: var(--accent-purple);
-		border-color: var(--accent-purple);
+		opacity: 1;
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+
+	.no-results {
+		font-family: var(--font-family-code);
+		font-size: 0.85rem;
+		color: var(--ctp-overlay);
+		margin: 0 0 2rem;
 	}
 
 	.tool {
 		margin-bottom: 2.75rem;
-		--section-accent: var(--accent-purple);
-		--section-accent-rgb: 136, 57, 239;
 	}
 
 	.tool-head {
@@ -814,11 +919,8 @@ const sections: Section[] = [
 		flex-wrap: wrap;
 		padding-bottom: 0.6rem;
 		margin-bottom: 1.1rem;
-		border-bottom: 1px solid var(--editor-line);
-	}
-
-	[data-theme="dark"] .tool-head {
-		border-bottom-color: rgba(var(--section-accent-rgb), 0.2);
+		border-bottom: 1px solid
+			color-mix(in srgb, var(--section-accent) 25%, transparent);
 	}
 
 	.tool-head h2 {
@@ -826,7 +928,6 @@ const sections: Section[] = [
 		font-family: var(--font-family-code);
 		font-size: 1.35rem;
 		font-weight: var(--font-weight-semibold);
-		color: var(--text-color);
 	}
 
 	.tool-head h2::before {
@@ -837,7 +938,7 @@ const sections: Section[] = [
 	.tool-note {
 		font-family: var(--font-family-code);
 		font-size: 0.78rem;
-		color: var(--text-color-muted);
+		color: var(--ctp-overlay);
 	}
 
 	.cards {
@@ -847,25 +948,17 @@ const sections: Section[] = [
 
 	.card {
 		break-inside: avoid;
-		-webkit-column-break-inside: avoid;
 		margin-bottom: 1rem;
-		border: 1px solid var(--editor-border);
+		border: 1px solid color-mix(in srgb, var(--section-accent) 18%, transparent);
 		border-radius: 8px;
 		padding: 1rem 1.1rem 1.1rem;
-		background: var(--editor-card);
-	}
-
-	[data-theme="dark"] .card {
-		border-color: rgba(var(--section-accent-rgb), 0.16);
-		background: var(--editor-card);
-		box-shadow: inset 0 1px 0 rgba(var(--section-accent-rgb), 0.06);
+		background: var(--ctp-base);
 	}
 
 	.card h3 {
 		margin: 0 0 0.7rem;
 		font-size: 0.95rem;
 		font-weight: var(--font-weight-medium);
-		color: var(--text-color);
 	}
 
 	.card h3 .hash {
@@ -873,42 +966,17 @@ const sections: Section[] = [
 		margin-right: 0.3rem;
 	}
 
-	[data-theme="dark"] #aerospace {
-		--section-accent: var(--ctp-sky);
-		--section-accent-rgb: 137, 220, 235;
-	}
-
-	[data-theme="dark"] #ghostty {
-		--section-accent: var(--ctp-mauve);
-		--section-accent-rgb: 203, 166, 247;
-	}
-
-	[data-theme="dark"] #tmux {
-		--section-accent: var(--ctp-green);
-		--section-accent-rgb: 166, 227, 161;
-	}
-
-	[data-theme="dark"] #neovim {
-		--section-accent: var(--ctp-yellow);
-		--section-accent-rgb: 249, 226, 175;
-	}
-
-	[data-theme="dark"] #system {
-		--section-accent: var(--ctp-pink);
-		--section-accent-rgb: 245, 194, 231;
-	}
-
 	.card-note {
 		margin: -0.4rem 0 0.7rem;
 		font-size: 0.75rem;
-		color: var(--text-color-muted);
+		color: var(--ctp-overlay);
 	}
 
 	.caption {
 		margin: 0.8rem 0 0;
 		font-size: 0.72rem;
-		color: var(--text-color-muted);
-		border-top: 1px dashed var(--editor-line);
+		color: var(--ctp-overlay);
+		border-top: 1px dashed var(--line);
 		padding-top: 0.6rem;
 	}
 
@@ -926,7 +994,7 @@ const sections: Section[] = [
 	}
 
 	.row + .row {
-		border-top: 1px solid var(--editor-line);
+		border-top: 1px solid var(--line);
 	}
 
 	.row.wide {
@@ -943,7 +1011,7 @@ const sections: Section[] = [
 	}
 
 	.desc {
-		color: var(--text-color-light);
+		color: var(--ctp-subtext);
 		font-size: 0.85rem;
 	}
 
@@ -960,51 +1028,23 @@ const sections: Section[] = [
 		white-space: nowrap;
 	}
 
-	[data-theme="dark"] .jump a:nth-child(5n + 1) {
-		color: var(--ctp-sky);
-		border-color: rgba(137, 220, 235, 0.28);
-		background: rgba(137, 220, 235, 0.05);
-	}
-
-	[data-theme="dark"] .jump a:nth-child(5n + 2) {
-		color: var(--ctp-mauve);
-		border-color: rgba(203, 166, 247, 0.28);
-		background: rgba(203, 166, 247, 0.05);
-	}
-
-	[data-theme="dark"] .jump a:nth-child(5n + 3) {
-		color: var(--ctp-green);
-		border-color: rgba(166, 227, 161, 0.24);
-		background: rgba(166, 227, 161, 0.045);
-	}
-
-	[data-theme="dark"] .jump a:nth-child(5n + 4) {
-		color: var(--ctp-yellow);
-		border-color: rgba(249, 226, 175, 0.24);
-		background: rgba(249, 226, 175, 0.045);
-	}
-
-	[data-theme="dark"] .jump a:nth-child(5n + 5) {
-		color: var(--ctp-pink);
-		border-color: rgba(245, 194, 231, 0.24);
-		background: rgba(245, 194, 231, 0.045);
-	}
-
-	[data-theme="dark"] kbd[data-key="alt"],
-	[data-theme="dark"] kbd[data-key="cmd"],
-	[data-theme="dark"] kbd[data-key="ctrl"],
-	[data-theme="dark"] kbd[data-key="prefix"],
-	[data-theme="dark"] kbd[data-key="space"] {
+	kbd:is(
+		[data-key="alt"],
+		[data-key="cmd"],
+		[data-key="ctrl"],
+		[data-key="prefix"],
+		[data-key="space"]
+	) {
 		color: var(--ctp-lavender);
-		border-color: rgba(180, 190, 254, 0.34);
-		background: rgba(180, 190, 254, 0.08);
+		border-color: color-mix(in srgb, var(--ctp-lavender) 34%, transparent);
+		background: color-mix(in srgb, var(--ctp-lavender) 8%, transparent);
 	}
 
 	.plus,
 	.join {
 		font-family: var(--font-family-code);
 		font-size: 0.7rem;
-		color: var(--text-color-muted);
+		color: var(--ctp-overlay);
 	}
 
 	.join {
@@ -1015,40 +1055,25 @@ const sections: Section[] = [
 	.page-foot {
 		margin-top: 3rem;
 		padding-top: 1.2rem;
-		border-top: 1px solid var(--editor-line);
+		border-top: 1px solid var(--line);
 		display: flex;
-		flex-wrap: wrap;
 		justify-content: flex-end;
-		gap: 0.5rem;
 		font-family: var(--font-family-code);
 		font-size: 0.76rem;
-		color: var(--text-color-muted);
 	}
 
 	.page-foot a {
-		color: var(--text-color-light);
+		color: var(--ctp-subtext);
 		text-decoration: none;
 	}
 
 	.page-foot a:hover {
-		color: var(--accent-purple);
+		color: var(--ctp-lavender);
 	}
 
 	@media (max-width: 560px) {
 		.wrap {
-			padding: 1rem 0.75rem 3rem;
-		}
-
-		.page-head {
-			border-radius: 8px 8px 0 0;
-			padding: 0.9rem;
-		}
-
-		.intro,
-		.search,
-		.jump {
-			padding-left: 0.9rem;
-			padding-right: 0.9rem;
+			padding: 1.25rem 1rem 3rem;
 		}
 
 		.row {
